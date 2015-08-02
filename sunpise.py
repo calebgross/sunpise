@@ -27,10 +27,10 @@ def getSunrise():
 	data = r.text
 	soup = BeautifulSoup(data)
 	tag = soup.find("td", {"class" : "dawn"})
-	dawn = tag.text											# sun begins to rise
+	dawn = tag.text						# sun begins to rise
 	tag = soup.find("td", {"class" : "sunshine"})
-	sunshine = tag.text										# sun is fully risen
-	return [dawn, sunshine]									# return times
+	sunshine = tag.text					# sun is fully risen
+	return [dawn, sunshine]					# return times
 
 # at dawn, begin timelapse
 def wait_start(sunTimes, still_interval):
@@ -38,12 +38,12 @@ def wait_start(sunTimes, still_interval):
 	now = datetime.today().time()
 	while startTime > now:
 		print now.strftime("%H:%M") + " not yet " + startTime.strftime("%H:%M")
-		sleep(60)											# wait for 60 seconds before trying again
+		sleep(60)					# wait for 60 seconds before trying again
 		now = datetime.today().time()
-	capture(sunTimes, still_interval)						# 1) get pics
-	stitch()												# 2) create timelapse
-	upload()												# 3) upload to YouTube
-	cleanup()												# 4) delete files
+	capture(sunTimes, still_interval)			# 1) get pics
+	stitch()						# 2) create timelapse
+	upload()						# 3) upload to YouTube
+	cleanup()						# 4) delete files
 	print "Done! at ",datetime.today().time().strftime("%H:%M"),"\n"	
 
 def runCommand(command):
@@ -69,10 +69,10 @@ def capture(sunTimes, still_interval):
 	print "Start seconds is:",start_seconds
 	print "End time is: ",endTime
 	print "End seconds is:",end_seconds
-	total_time = (end_seconds - start_seconds) * 1000 		# total time in ms
+	total_time = (end_seconds - start_seconds) * 1000 	# total time in ms
 	total_time_min = total_time/float(60000)                # total time in min
 	print "Total time is: ",total_time
-	still_interval_sec = still_interval/float(1000)			# still interval in sec
+	still_interval_sec = still_interval/float(1000)		# still interval in sec
 	now = datetime.today().time().strftime("%H:%M")
 	print '\n',"==> Step 1 of 4: Taking stills..."
 	print "Starting at " + str(now) + ", capturing still every " + str(still_interval_sec) + "s for " + str(total_time_min) + "min."
