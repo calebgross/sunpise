@@ -75,14 +75,25 @@ def capture(sunTimes, still_interval):
 	still_interval_sec = still_interval/float(1000)		# still interval in sec
 	now = datetime.today().time().strftime("%H:%M")
 	print '\n',"==> Step 1 of 4: Taking stills..."
-	print "Starting at " + str(now) + ", capturing still every " + str(still_interval_sec) + "s for " + str(total_time_min) + "min."
-	testStills = "raspistill -o image_%04d.jpg -tl " + str(still_interval) + " -t " + str(total_time)
+	print "Starting at " + str(now) + ", \
+        capturing still every " + str(still_interval_sec) + "s \
+        for " + str(total_time_min) + "min."
+	testStills = "raspistill \
+        -o image_%04d.jpg \
+        -tl " + str(still_interval) + " \
+        -t " + str(total_time)
 	runCommand(testStills)
 
 # compile video from frames
 def stitch():
 	getStills = "ls *.jpg > stills.txt"
-	makeVideo = "mencoder -nosound -ovc lavc -lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 -vf scale=1920:1080 -o tlcam.avi -mf type=jpeg:fps=24 mf://@stills.txt"
+	makeVideo = "mencoder \
+        -nosound \
+        -ovc lavc \
+        -lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 \
+        -vf scale=1920:1080 \
+        -o tlcam.avi \
+        -mf type=jpeg:fps=24 mf://@stills.txt"
 	print '\n',"==> Step 2 of 4: Stitching frames together..."
 	runCommand(getStills)
 	runCommand(makeVideo)
@@ -90,7 +101,11 @@ def stitch():
 # upload to youtube
 def upload():
 	date = datetime.today().strftime("%d %b %Y")
-	uploadVideo = "/usr/local/bin/youtube-upload -m <email> -p <password> -t 'Charlottesville Sunrise - " + date + "' -c 'Entertainment' tlcam.avi"
+	uploadVideo = "/usr/local/bin/youtube-upload \
+        -m <email> \
+        -p <password> \
+        -t 'Charlottesville Sunrise - " + date + "' -c 'Entertainment' \
+        tlcam.avi"
 	print '\n',"==> Step 3 of 4: Uploading video..."
 	runCommand(uploadVideo)
 
