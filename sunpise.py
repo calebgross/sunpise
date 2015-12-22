@@ -14,23 +14,22 @@
 # crontab
 # Wi-Fi module
 
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import requests
+import re
 from subprocess import Popen, PIPE, STDOUT
 from datetime import datetime, time
 from time import sleep
 
 # get Charlottesville sunrise time from the web
 def getSunrise():
-	url = "http://www.timeanddate.com/astronomy/usa/kailua-kona"
-	r = requests.get(url).text
-	data = r.text
-	soup = BeautifulSoup(data)
-	tag = soup.find("td", {"class" : "dawn"})
-	dawn = tag.text						# sun begins to rise
-	tag = soup.find("td", {"class" : "sunshine"})
-	sunshine = tag.text					# sun is fully risen
-	return [dawn, sunshine]					# return times
+	url = "http://www.gaisma.com/en/location/kailua-hawaii.html"
+	html = requests.get(url).text
+	dawn = re.search(r'<td class="dawn">.*?</td>', html).group()
+	dawn = re.sub(r'<.*?>', '', dawn)
+	sunshine = re.search(r'<td class="sunshine">.*?</td>', html).group()
+	sunshine = re.sub(r'<.*?>', '', sunshine)
+	return [dawn, sunshine]
 
 # at dawn, begin timelapse
 def wait_start(sunTimes, still_interval):
@@ -116,7 +115,7 @@ def cleanup():
 	runCommand(removeFiles)
 
 # main loop
-getSunrise()
+print(getSunrise())
 # print "==================================="
 # print "========== ",datetime.today().strftime("%d %b %Y")," =========="
 # print "==================================="
