@@ -1,18 +1,22 @@
 #!/usr/bin/python
 
-# Charlottesville Sunrise Project
-# Written by Caleb Gross
-# University of Virginia
+# SunpPise
+# Caleb Gross
 #
 # A Raspberry Pi (Model B) grabs the sunrise time from the web, and
 # records a timelapse of the sunrise each morning. It then posts the
 # timelapse to a YouTube channel where others can view it.
 #
 # Uses:
-# Raspberry Pi Model B
-# Raspberry Pi Camera Module
-# crontab
-# Wi-Fi module
+# - Raspberry Pi Model B
+# - Raspberry Pi Camera Module
+# - crontab
+# - Wi-Fi module
+#
+# Dependencies:
+# - raspistill
+# - mencoder
+# - youtube-upload
 
 import requests
 import re
@@ -46,8 +50,7 @@ def wait_start(event_times, still_interval):
 	print("Done at",datetime.today().time().strftime("%H:%M"),"\n")
 
 def run_command(command):
-	shellCommand = command
-	event = Popen(shellCommand, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+	event = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 	# poll process for new output until finished
 	while True:
         	nextline = event.stdout.readline()
@@ -60,13 +63,13 @@ def run_command(command):
 # take pictures
 def capture(sunTimes, still_interval):
 	# take a picture every [30] seconds for [60] minutes
-	startTime = map(int, sunTimes[0].split(':'));
-	start_seconds = startTime[0] * 3600 + startTime[1] * 60	# start time in sec
-	endTime = map(int, sunTimes[1].split(':'));
-	end_seconds = endTime[0] * 3600 + endTime[1] * 60       # end time in sec
-	print("Start time is: ",startTime)
+	start_time = map(int, sunTimes[0].split(':'));
+	start_seconds = start_time[0] * 3600 + start_time[1] * 60	# start time in sec
+	end_time = map(int, sunTimes[1].split(':'));
+	end_seconds = end_time[0] * 3600 + end_time[1] * 60       # end time in sec
+	print("Start time is: ",start_time)
 	print("Start seconds is:",start_seconds)
-	print("End time is: ",endTime)
+	print("End time is: ",end_time)
 	print("End seconds is:",end_seconds)
 	total_time = (end_seconds - start_seconds) * 1000 	# total time in ms
 	total_time_min = total_time/float(60000)                # total time in min
@@ -77,16 +80,16 @@ def capture(sunTimes, still_interval):
 	print("Starting at " + str(now) + ", \
         capturing still every " + str(still_interval_sec) + "s \
         for " + str(total_time_min) + "min.")
-	testStills = "raspistill \
+	test_stills = "raspistill \
         -o image_%04d.jpg \
         -tl " + str(still_interval) + " \
         -t " + str(total_time)
-	run_command(testStills)
+	run_command(test_stills)
 
 # compile video from frames
 def stitch():
-	getStills = "ls *.jpg > stills.txt"
-	makeVideo = "mencoder \
+	get_stills = "ls *.jpg > stills.txt"
+	make_video = "mencoder \
         -nosound \
         -ovc lavc \
         -lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 \
@@ -94,22 +97,22 @@ def stitch():
         -o tlcam.avi \
         -mf type=jpeg:fps=24 mf://@stills.txt"
 	print('\n',"==> Step 2 of 4: Stitching frames together...")
-	run_command(getStills)
-	run_command(makeVideo)
+	run_command(get_stills)
+	run_command(make_video)
 
 # upload to youtube
 def upload():
 	date = datetime.today().strftime("%d %b %Y")
-	uploadVideo = "/usr/local/bin/youtube-upload \
+	upload_video = "/usr/local/bin/youtube-upload \
         -m <email> \
         -p <password> \
         -t 'Charlottesville Sunrise - " + date + "' -c 'Entertainment' \
         tlcam.avi"
 	print('\n',"==> Step 3 of 4: Uploading video...")
-	run_command(uploadVideo)
+	run_command(upload_video)
 
 # delete files
 def cleanup():
-	removeFiles = "rm *.jpg; rm tlcam.avi"
+	remove_files = "rm *.jpg; rm tlcam.avi"
 	print('\n',"==> Step 4 of 4: Removing files...")
-	run_command(removeFiles)
+	run_command(remove_files)
