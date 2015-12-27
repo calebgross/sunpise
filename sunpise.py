@@ -21,18 +21,25 @@
 from functions import *
 
 def main():
-	# event_times = get_sunrise_events()
-	# print(event_times)
-	still_interval = 1000	# still interval in ms
-	# wait_start(event_times, still_interval)
-	# print "==================================="
-	# print "========== ",datetime.today().strftime("%d %b %Y")," =========="
-	# print "==================================="
+	print('=================================')
+	print('==========',datetime.now().strftime('%d %b %Y'),'==========')
+	print('=================================')
+	capture_interval = 1000	                 # still interval in ms
+	event_times = get_event_times()          # 1) get sunrise times
+	for key in event_times:
+		print(key + ':',event_times[key])
+	print("now:",datetime.now())
+	wait_until_dawn(event_times['dawn'])     # 2) wait until sunrise
+	# capture(event_times, capture_interval) # 3) get pics
+	# stitch()                               # 4) create timelapse
+	# upload()                               # 5) upload to YouTube
+	# cleanup()                              # 6) delete files
+	# print('Done at',datetime.strftime('%H:%M', localtime()),'\n')
 
 	# testing
-	test_times = {'dawn': u'18:23', 'sunshine': u'19:23'}
-	print(test_times)
-	wait_start(test_times, still_interval)
+	# test_times = {'dawn': u'18:23', 'sunshine': u'19:23'}
+	# print(test_times)
+	# wait_start(test_times, capture_interval)
 
 if __name__ == "__main__":
     main()
