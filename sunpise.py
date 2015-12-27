@@ -20,16 +20,17 @@
 
 from functions import *
 
-testing        = True # development aid
-still_interval = 1000 # still interval in ms	
+debug          = True            # development flag
+still_interval = 1000            # still interval in milliseconds
+location       = 'kailua-hawaii' # camera location
 
 def main():
 	print('=================================')
 	print('==========',datetime.now().strftime('%d %b %Y'),'==========')
 	print('=================================')
 
-	if testing:
-		print('Testing!')
+	# 1) get times for dawn and sunshine
+	if debug:
 		event_times = {
 		'dawn': datetime.now().replace(hour=0, minute=45, microsecond=0),
 		'sunshine': datetime.now().replace(hour=7, minute=5, microsecond=0)
@@ -38,11 +39,22 @@ def main():
 		event_times = get_event_times()          
 	for key in event_times:
 		print(key + ':',event_times[key].strftime('%H:%M'))
-	wait_until(event_times['dawn'])     
+
+	# 2) wait until dawn to start timelapse
+	wait_until(event_times['dawn'])
+
+	# 3) start capturing stills
 	capture(event_times) 
-	video_name = stitch()                  
-	upload(video_name)                     
-	cleanup()                            
+
+	# 4) make video
+	video_name = stitch()            
+
+	# 5) upload video
+	upload(video_name)             
+
+	# 6) remove files from device      
+	cleanup()                  
+
 	print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
 
 if __name__ == "__main__":
