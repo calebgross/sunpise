@@ -1,29 +1,28 @@
 #!/usr/bin/python
 
-# SunpPise
-# Caleb Gross
-
 import requests
 import re
 from subprocess import Popen, PIPE, STDOUT
 from datetime import datetime
 from time import sleep
 
+from sunpise import testing, still_interval
+from credentials import youtube
+
 def run_command(command):
+	for credential in youtube.values():
+		command = command.replace(credential, '########')
 	print('Executing command:',command)
-	# if not testing:
-	# 	print('not testing')
-	# else:
-	# 	print('testing')
-		# event = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+	if not testing:
+		event = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 		# poll process for new output until finished
-		# while True:
-		# 	nextline = event.stdout.readline()
-		# 	if nextline == '' and event.poll() != None:
-		# 		break
-		# 	if nextline == '' or nextline.isspace():
-		# 		break
-		# 		print(nextline),
+		while True:
+			nextline = event.stdout.readline()
+			if nextline == '' and event.poll() != None:
+				break
+			if nextline == '' or nextline.isspace():
+				break
+				print(nextline),
 
 # get times for dawn and sunshine from the web
 def get_event_times():
@@ -40,7 +39,7 @@ def get_event_times():
 	return events
 
 # wait until dawn
-def wait_until_dawn(dawn):
+def wait_until(dawn):
 	print('Currently',datetime.now().time().strftime('%H:%M')+',', end=' ')
 	if datetime.now() >= dawn:
 		print('sun has started rising. Starting timelapse.')
@@ -51,10 +50,10 @@ def wait_until_dawn(dawn):
 		print('sleeping',str(seconds_until_dawn),
 			  'seconds until',dawn.strftime('%H:%M'+'.'))
 		sleep(seconds_until_dawn)
-		wait_until_dawn(dawn)
+		wait_until(dawn)
 
 # take pictures
-def capture(event_times, still_interval):
+def capture(event_times):
 	capture_interval = event_times['sunshine'] - event_times['dawn']
 	print('\n==> Step 1 of 4: Capturing stills...')
 	print('Starting at ' + event_times['dawn'].strftime('%H:%M') + 
@@ -92,8 +91,8 @@ def stitch():
 def upload(video_name):
 	upload = (
 		'/usr/local/bin/youtube-upload ' + 
-		'-m <email> ' +
-		'-p <password> ' +
+		'-m ' + youtube['email'] + ' ' +
+		'-p ' + youtube['password'] + ' ' +
 		'-t "Kailua Sunrise - ' + datetime.now().strftime('%d %b %Y') + '" ' +
 		'-c Entertainment ' + 
 		video_name
