@@ -36,9 +36,10 @@ def main():
 		'sunshine': datetime.now().replace(hour=7, minute=5, microsecond=0)
 		}
 	else:
-		event_times = get_event_times()          
-	for key in event_times:
-		print(key + ':',event_times[key].strftime('%H:%M'))
+		event_times = get_event_times()      
+	for key in sorted(event_times.keys()):
+		print(key.capitalize() + ':' + ' ' *(9-len(key)) +
+			event_times[key].strftime('%H:%M'))
 
 	# 2) wait until dawn to start timelapse
 	wait_until(event_times['dawn'])

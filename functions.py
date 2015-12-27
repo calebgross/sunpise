@@ -94,19 +94,18 @@ def capture(event_times):
 
 # compile video from frames
 def stitch():
-	get_stills = 'ls still_*.jpg > stills_list.txt'
 	video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
 	make_video = (
 		'mencoder ' +
+		'mf://still_*.jpg' +
+		'-mf type=jpg:fps=24' +
 		'-nosound ' +
 		'-ovc lavc ' +
 		'-lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 ' +
 		'-vf scale=1920:1080 ' +
-		'-o ' + video_name + ' ' +  
-		'-mf type=jpeg:fps=24 mf://@stills_list.txt'
+		'-o ' + video_name
 		)
 	print('\n==> Step 2 of 4: Stitching frames together...')
-	run_command(get_stills)
 	run_command(make_video)
 	return video_name
 
