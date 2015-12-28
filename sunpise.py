@@ -23,11 +23,17 @@ from functions import *
 debug          = True            # development flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
+title_margin   = 20
+title_char     = '~'
 
 def main():
-	print('=================================')
-	print('==========',datetime.now().strftime('%d %b %Y'),'==========')
-	print('=================================')
+
+	# log heading
+	title = (re.sub(r'-.*', '', location).capitalize() + ' - ' + 
+		datetime.now().strftime('%d %b %Y'))
+	print(title_char * (2 * title_margin + 2 + len(title)))
+	print(title_char * title_margin, title, title_char * title_margin)
+	print(title_char * (2 * title_margin + 2 + len(title)))
 
 	# 1) get times for dawn and sunshine
 	if debug:
