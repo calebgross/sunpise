@@ -20,49 +20,55 @@
 
 from functions import *
 
+event_type     = 'sunrise'       # sunrise OR sunset
 debug          = True            # development flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
 title_margin   = 20
 title_char     = '~'
+event_names    = {
+    'sunrise': {'start': 'dawn',   'end': 'sunrise'},
+    'sunset' : {'start': 'sunset', 'end': 'dusk'}
+    }
+
+def print_title():
+    title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
+        event_type.capitalize()  + ' - ' + 
+        datetime.now().strftime('%d %b %Y'))
+    print(title_char * (2 * title_margin + 2 + len(title)))
+    print(title_char * title_margin, title, title_char * title_margin)
+    print(title_char * (2 * title_margin + 2 + len(title)))
+
+def print_times(event_times):
+    for key in reversed(sorted(event_times.keys())):
+        print(key.capitalize() + ':' + ' ' *(9-len(key)) +
+            event_times[key].strftime('%H:%M'))
 
 def main():
 
-	# log heading
-	title = (re.sub(r'-.*', '', location).capitalize() + ' - ' + 
-		datetime.now().strftime('%d %b %Y'))
-	print(title_char * (2 * title_margin + 2 + len(title)))
-	print(title_char * title_margin, title, title_char * title_margin)
-	print(title_char * (2 * title_margin + 2 + len(title)))
+    # log heading
+    print_title()
 
-	# 1) get times for dawn and sunshine
-	if debug:
-		event_times = {
-		'dawn': datetime.now().replace(hour=0, minute=45, microsecond=0),
-		'sunshine': datetime.now().replace(hour=7, minute=5, microsecond=0)
-		}
-	else:
-		event_times = get_event_times()      
-	for key in sorted(event_times.keys()):
-		print(key.capitalize() + ':' + ' ' *(9-len(key)) +
-			event_times[key].strftime('%H:%M'))
+    # 1) get event times
+    event_times = get_event_times()
+    print_times(event_times)
 
-	# 2) wait until dawn to start timelapse
-	wait_until(event_times['dawn'])
+    # # 2) wait until dawn to start timelapse
+    wait_until(event_times['start'])
 
-	# 3) start capturing stills
-	capture(event_times) 
+    # # 3) start capturing stills
+    capture(event_times) 
 
-	# 4) make video
-	video_name = stitch()            
+    # # 4) make video
+    video_name = stitch()            
 
-	# 5) upload video
-	upload(video_name)             
+    # # 5) upload video
+    upload(video_name)             
 
-	# 6) remove files from device      
-	cleanup()                  
+    # # 6) remove files from device      
+    cleanup()                  
 
-	print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
+    print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
 
 if __name__ == "__main__":
     main()
