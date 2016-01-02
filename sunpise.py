@@ -24,7 +24,6 @@ event_type     = 'sunrise'       # sunrise OR sunset
 debug          = True            # development flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
-title_margin   = 20
 title_char     = '~'
 event_names    = {
     'sunrise': {'start': 'dawn',   'end': 'sunrise'},
@@ -35,9 +34,11 @@ def print_title():
     title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
         event_type.capitalize()  + ' - ' + 
         datetime.now().strftime('%d %b %Y'))
+    title_margin = int(40 - float(len(title) + 2)/2)
     print(title_char * (2 * title_margin + 2 + len(title)))
     print(title_char * title_margin, title, title_char * title_margin)
     print(title_char * (2 * title_margin + 2 + len(title)))
+    print()
 
 def print_times(event_times):
     for key in reversed(sorted(event_times.keys())):
