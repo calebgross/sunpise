@@ -9,7 +9,7 @@ from   datetime    import datetime
 from   time        import sleep
 
 # sunpise modules
-from   sunpise     import debug, still_interval, location, event_type, event_names
+from   sunpise     import debug, internet, still_interval, location, event_type
 from   credentials import youtube
 
 def run_command(command):
@@ -43,15 +43,37 @@ def run_command(command):
                 break
             print(next_line),
 
+def print_title():
+    title_char = '~'
+    title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
+        event_type.capitalize()  + ' - ' + 
+        datetime.now().strftime('%d %b %Y'))
+    title_margin = int(40 - float(len(title) + 2)/2)
+    print(title_char * (2 * title_margin + 2 + len(title)))
+    print(title_char * title_margin, title, title_char * title_margin)
+    print(title_char * (2 * title_margin + 2 + len(title)))
+    print()
+
+def print_times(event_times):
+    for key in reversed(sorted(event_times.keys())):
+        print(key.capitalize() + ':' + ' ' *(9-len(key)) +
+            event_times[key].strftime('%H:%M'))
+
 # get times for dawn and sunshine from the web
 def get_event_times():
 
     # retrieve data
     url = 'http://www.gaisma.com/en/location/' + location + '.html'
-    html = requests.get(url).text
+    
     html_formatted = ''
-    for line in html.split('\n'):
-        html_formatted += line.strip()
+    if debug and not internet:
+        html = open('sunrise.html')
+        for line in html:
+            html_formatted += line.strip()
+    else:
+        html = requests.get(url).text
+        for line in html.split('\n'):
+            html_formatted += line.strip()
 
     # pull desired data from html source
     pattern = (
@@ -69,8 +91,12 @@ def get_event_times():
     times = listify(match.group(2))
 
     # get start/end datetimes for sunrise/sunset
-    today = datetime.now().date()
+    event_names    = {
+    'sunrise': {'start': 'dawn',   'end': 'sunrise'},
+    'sunset' : {'start': 'sunset', 'end': 'dusk'}
+    }
     event_times = {}
+    today = datetime.now().date()
     for event_name in sorted(event_names[event_type].keys()):
         event_time_index = header.index(
             event_names[event_type][event_name].capitalize())
@@ -87,7 +113,7 @@ def wait_until(start):
     print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
 
     # check if sun is rising/setting
-    if datetime.now() >= start:
+    if datetime.now() <= start or debug:
         print('sun has started rising/setting. Starting timelapse.')
         return
 
