@@ -10,7 +10,7 @@ from   datetime    import datetime
 from   time        import sleep
 
 # sunpise modules
-from   sunpise     import debug, internet, still_interval, location, event_type
+from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down
 from   credentials import youtube
 
 def run_command(command):
@@ -116,7 +116,7 @@ def wait_until(start):
     print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
 
     # check if sun is rising/setting
-    if datetime.now() <= start or debug:
+    if datetime.now() >= start or debug:
         print('sun has started rising/setting. Starting timelapse.')
         return
 
@@ -134,10 +134,13 @@ def capture(event_times):
     capture_interval = event_times['end'] - event_times['start']
     capture = (
         'raspistill ' +
-        '-o still_%04d.jpg ' +
+        '--burst ' + 
+        '-o ' sunpise_dir + 'stills/still_%04d.jpg ' +
         '-tl ' + str(still_interval) + ' ' +
         '-t ' + str(capture_interval.seconds*1000)
         )
+    if upside_down:
+        capture += ' --hflip --vflip'
     print('\n==> Step 1 of 4: Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
@@ -151,13 +154,13 @@ def stitch():
     video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
     make_video = (
         'mencoder ' +
-        'mf://still_*.jpg' +
-        '-mf type=jpg:fps=24' +
+        'mf://' + sunpise_dir + 'stills/still_*.jpg ' +
+        '-mf type=jpg:fps=24 ' +
         '-nosound ' +
         '-ovc lavc ' +
         '-lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 ' +
         '-vf scale=1920:1080 ' +
-        '-o ' + video_name
+        '-o ' + sunpise_dir + video_name
         )
     print('\n==> Step 2 of 4: Stitching frames together...')
     run_command(make_video)
@@ -181,7 +184,7 @@ def upload(video_name):
 
 # delete files
 def cleanup():
-    cleanup = 'rm *.jpg; rm *.avi'
+    cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
     print('\n==> Step 4 of 4: Removing files...')
     run_command(cleanup)
     return
