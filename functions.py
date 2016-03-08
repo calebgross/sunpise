@@ -135,7 +135,7 @@ def capture(event_times):
     capture = (
         'raspistill ' +
         '--burst ' + 
-        '-o ' sunpise_dir + 'stills/still_%04d.jpg ' +
+        '-o ' + sunpise_dir + 'stills/still_%04d.jpg ' +
         '-tl ' + str(still_interval) + ' ' +
         '-t ' + str(capture_interval.seconds*1000)
         )
