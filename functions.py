@@ -153,14 +153,12 @@ def capture(event_times):
 def stitch():
     video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
     make_video = (
-        'mencoder ' +
-        'mf://' + sunpise_dir + 'stills/still_*.jpg ' +
-        '-mf type=jpg:fps=24 ' +
-        '-nosound ' +
-        '-ovc lavc ' +
-        '-lavcopts vcodec=mpeg4:aspect=16/9:vbitrate=8000000 ' +
-        '-vf scale=1920:1080 ' +
-        '-o ' + sunpise_dir + video_name
+        'avconv ' +
+        '-f image2 ' + 
+        '-i ' + sunpise_dir + 'stills/still_%04d.jpg ' + 
+        '-r 12 ' + 
+        '-s 1920x1080 ' + 
+        sunpise_dir + video_name
         )
     print('\n==> Step 2 of 4: Stitching frames together...')
     run_command(make_video)
