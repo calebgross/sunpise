@@ -8,6 +8,7 @@ import textwrap
 from   subprocess  import Popen, PIPE, STDOUT
 from   datetime    import datetime
 from   time        import sleep
+import os
 
 # sunpise modules
 from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down
@@ -26,23 +27,24 @@ def run_command(command):
 
     # execute command
     if not debug:
-        event = Popen(
-            command,
-            shell     = True,
-            stdin     = PIPE,
-            stdout    = PIPE,
-            stderr    = STDOUT,
-            close_fds = True
-            )
+        os.system(command)
+    #    event = Popen(
+    #        command,
+    #        shell     = True,
+    #        stdin     = PIPE,
+    #        stdout    = PIPE,
+    #        stderr    = STDOUT,
+    #        close_fds = True
+    #        )
 
         # poll process for new output until finished
-        while True:
-            next_line = event.stdout.readline()
-            if next_line == '' and event.poll() != None:
-                break
-            if next_line == '' or next_line.isspace():
-                break
-            print(next_line),
+        #while True:
+        #    next_line = event.stdout.readline()
+        #    if next_line == '' and event.poll() != None:
+        #       break
+        #    if next_line == '' or next_line.isspace():
+        #        break
+        #    print(next_line),
 
 def print_title():
     title_char = '~'
@@ -131,13 +133,14 @@ def wait_until(start):
 
 # take pictures
 def capture(event_times):
-    capture_interval = event_times['end'] - event_times['start']
+    #capture_interval = event_times['end'] - event_times['start']
+    capture_interval = 300000
     capture = (
         'raspistill ' +
         '--burst ' + 
-        '-o ' sunpise_dir + 'stills/still_%04d.jpg ' +
+        '-o ' + sunpise_dir + 'stills/still_%04d.jpg ' +
         '-tl ' + str(still_interval) + ' ' +
-        '-t ' + str(capture_interval.seconds*1000)
+        '-t ' + str(capture_interval*1000)
         )
     if upside_down:
         capture += ' --hflip --vflip'
@@ -145,7 +148,7 @@ def capture(event_times):
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(still_interval/1000))+ ' seconds for ' +
-        str(int(capture_interval.seconds/60)) + ' minutes.')
+        str(int(capture_interval/60000)) + ' minutes.')
     run_command(capture)  
     return
 
@@ -174,7 +177,7 @@ def upload(video_name):
         '-t "' + location_formatted + ' Sunrise - ' +
             datetime.now().strftime('%d %b %Y') + '" ' +
         '-c Entertainment ' + 
-        video_name
+        sunpise_dir + video_name
         )
     print('\n==> Step 3 of 4: Uploading video...')
     run_command(upload)
@@ -183,6 +186,6 @@ def upload(video_name):
 # delete files
 def cleanup():
     cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
-    print('\n==> Step 4 of 4: Removing files...')
-    run_command(cleanup)
+    #print('\n==> Step 4 of 4: Removing files...')
+    #run_command(cleanup)
     return

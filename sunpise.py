@@ -26,7 +26,7 @@ debug          = False            # development flag
 internet       = True            # Internet connection flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
-sunpise_dir    = '~/sunpise/'
+sunpise_dir    = '/home/pi/sunpise/'
 upside_down    = True
 
 def main():
