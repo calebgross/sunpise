@@ -1,9 +1,17 @@
 SunPise
 ===
 ####How It Works
-A Raspberry Pi (Model B) grabs the sunrise time from the web each morning, and uses its attached camera module to record a time-lapse of the sunrise. It then posts the time-lapse to a [YouTube channel](https://www.youtube.com/channel/UCFsV7YLKRGnAX3VVVQzPAXg) where others can view it.
+A Raspberry Pi grabs the sunrise time from the web each morning, and uses its attached camera module to record a time-lapse of the sunrise. It then posts the time-lapse to a [YouTube channel](https://www.youtube.com/channel/UCFsV7YLKRGnAX3VVVQzPAXg) where others can view it.
 
-The script is launched in the Pi's Linux environment using `cron`. You can create the following job by entering the command `crontab -e` job and pasting the following line at the end of the config file :
+####Dependencies and Installation
+Ensure the following packages are installed before attempting to run `sunpise.py`:
+
+- [python3](https://www.python.org/download/releases/3.0/)
+- [python-picamera](https://www.raspberrypi.org/documentation/usage/camera/python/README.md)
+- [libav-tools](https://libav.org/)
+- [youtube-upload](https://github.com/tokland/youtube-upload)
+
+This script is launched in the Pi's Linux environment using `cron`. You can create the following job by entering the command `crontab -e` job and pasting the following line at the end of the config file :
 
 	0 5 * * * python3 /home/pi/sunpise/sunpise.py >> /home/pi/sunpise/sunpise_log.txt
 
@@ -11,15 +19,16 @@ You can make use of the following commands to debug your camera's setup and netw
 
 - View camera feed on Linux:
 
-	nc -l -p 5001 | mplayer -fps 31 -cache 1024 -
+		nc -l -p 5001 | mplayer -fps 31 -cache 1024 -
 
 - View camera feed on Mac:
 
-	nc -l 5001 | mplayer -fps 31 -cache 1024 -
+		nc -l 5001 | mplayer -fps 31 -cache 1024 -
 
-- Stream from Pi:
+- Stream camera feed from Pi:
 
-	raspivid -t 999999 -o - | nc [insert the IP address of the client] 5001
+		raspivid -t 999999 -o - | nc [insert the IP address of the client] 5001
 
 ####To-do
 - Change the sunrise web page to make it easier to use the camera in other locations
+
