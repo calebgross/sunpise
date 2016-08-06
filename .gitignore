@@ -3,5 +3,5 @@ credentials.py
 sunrise.html
 *.avi
 stills/*.jpg
-sunpise_log.txt
+sunpise_log.txt*
 name.py

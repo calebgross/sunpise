@@ -133,14 +133,14 @@ def wait_until(start):
 
 # take pictures
 def capture(event_times):
-    #capture_interval = event_times['end'] - event_times['start']
-    capture_interval = 300000
+    capture_interval = event_times['end'] - event_times['start']
+    #capture_interval = 300000
     capture = (
         'raspistill ' +
         '--burst ' + 
         '-o ' + sunpise_dir + 'stills/still_%04d.jpg ' +
         '-tl ' + str(still_interval) + ' ' +
-        '-t ' + str(capture_interval*1000)
+        '-t ' + str(capture_interval.seconds*1000)
         )
     if upside_down:
         capture += ' --hflip --vflip'
@@ -148,7 +148,7 @@ def capture(event_times):
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(still_interval/1000))+ ' seconds for ' +
-        str(int(capture_interval/60000)) + ' minutes.')
+        str(int(capture_interval.seconds/60)) + ' minutes.')
     run_command(capture)  
     return
 
