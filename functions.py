@@ -186,6 +186,6 @@ def upload(video_name):
 # delete files
 def cleanup():
     cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
-    #print('\n==> Step 4 of 4: Removing files...')
-    #run_command(cleanup)
+    print('\n==> Step 4 of 4: Removing files...')
+    run_command(cleanup)
     return
