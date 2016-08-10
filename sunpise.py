@@ -1,24 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# SunpPise
-# Caleb Gross
-#
-# A Raspberry Pi grabs the sunrise time from the web, and records a timelapse of
-# the sunrise each morning. It then posts the timelapse to a YouTube channel
-# where others can view it.
-#
-# Uses:
-# - Raspberry Pi Model B
-# - Raspberry Pi Camera Module
-# - crontab
-# - Wi-Fi dongle
-#
-# Dependencies:
-# - raspistill
-# - mencoder
-# - youtube-upload
-
 from functions import *
 
 event_type     = 'sunrise'       # sunrise OR sunset
@@ -27,6 +9,7 @@ internet       = True            # Internet connection flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
 sunpise_dir    = '/home/pi/sunpise/'
+client_secrets = 'client_secrets.json'
 upside_down    = True
 
 def main():

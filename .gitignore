@@ -1,7 +1,6 @@
 __pycache__/*
-credentials.py
 sunrise.html
 *.avi
 stills/*.jpg
 sunpise_log.txt*
-name.py
+client_secrets.json

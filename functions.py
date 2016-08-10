@@ -11,18 +11,15 @@ from   time        import sleep
 import os
 
 # sunpise modules
-from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down
-from   credentials import youtube
+from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down, client_secrets
 
 def run_command(command):
 
-    # sanitize and log command
+    # log command
     printed_command = command
     prefix = 'Executing command: '
     wrapper = textwrap.TextWrapper(initial_indent=prefix,
         width=80, subsequent_indent=' '*int((len(prefix)/4)))
-    for credential in youtube.values():
-        printed_command = printed_command.replace(credential, '########')
     print(wrapper.fill(printed_command))
 
     # execute command
@@ -144,12 +141,26 @@ def capture(event_times):
         )
     if upside_down:
         capture += ' --hflip --vflip'
-    print('\n==> Step 1 of 4: Capturing stills...')
+    print('\n==> Step 1 of 4 ('+datetime.now().strftime('%H:%M')+'): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(still_interval/1000))+ ' seconds for ' +
         str(int(capture_interval.seconds/60)) + ' minutes.')
     run_command(capture)  
+    
+    # account for unprocessed stills so avconv can process input
+    filenames = os.listdir('/home/pi/sunpise/stills')
+    change_filename = lambda filename, new_filename: ('mv ' +
+        '/home/pi/sunpise/stills/' + filename +
+        ' ' +
+        '/home/pi/sunpise/stills/' + new_filename
+        )
+    i = 0
+    for filename in sorted(filenames):
+        new_filename = 'still_' + str(int(i)).zfill(4) + '.jpg'
+        os.system(change_filename(filename, new_filename))
+        i += 1
+
     return
 
 # compile video from frames
@@ -163,7 +174,7 @@ def stitch():
         '-s 1920x1080 ' + 
         sunpise_dir + video_name
         )
-    print('\n==> Step 2 of 4: Stitching frames together...')
+    print('\n==> Step 2 of 4 ('+datetime.now().strftime('%H:%M')+'): Stitching frames together...')
     run_command(make_video)
     return video_name
 
@@ -172,20 +183,19 @@ def upload(video_name):
     location_formatted = re.sub(r'-.*', '', location).capitalize()
     upload = (
         '/usr/local/bin/youtube-upload ' + 
-        '-m ' + youtube['email'] + ' ' +
-        '-p ' + youtube['password'] + ' ' +
         '-t "' + location_formatted + ' Sunrise - ' +
             datetime.now().strftime('%d %b %Y') + '" ' +
         '-c Entertainment ' + 
+	'--client-secrets=' + sunpise_dir + client_secrets + ' ' +
         sunpise_dir + video_name
         )
-    print('\n==> Step 3 of 4: Uploading video...')
+    print('\n==> Step 3 of 4 ('+datetime.now().strftime('%H:%M')+'): Uploading video...')
     run_command(upload)
     return
 
 # delete files
 def cleanup():
     cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
-    print('\n==> Step 4 of 4: Removing files...')
+    print('\n==> Step 4 of 4 ('+datetime.now().strftime('%H:%M')+'): Removing files...')
     run_command(cleanup)
     return
