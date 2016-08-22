@@ -181,9 +181,10 @@ def stitch():
 # upload to YouTube
 def upload(video_name):
     location_formatted = re.sub(r'-.*', '', location).capitalize()
+    event_type_formatted = event_type.capitalize()
     upload = (
         '/usr/local/bin/youtube-upload ' + 
-        '-t "' + location_formatted + ' Sunrise - ' +
+        '-t "' + location_formatted + ' ' + event_type_formatted + ' - ' +
             datetime.now().strftime('%d %b %Y') + '" ' +
         '-c Entertainment ' + 
 	'--client-secrets=' + sunpise_dir + client_secrets + ' ' +

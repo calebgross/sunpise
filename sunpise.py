@@ -4,7 +4,7 @@
 from functions import *
 
 event_type     = 'sunset'       # sunrise OR sunset
-debug          = False           # development flag
+debug          = True           # development flag
 internet       = True            # Internet connection flag
 still_interval = 1000            # still interval in milliseconds
 location       = 'kailua-hawaii' # camera location
