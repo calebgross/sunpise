@@ -3,7 +3,10 @@
 
 from functions import *
 
-event_type     = 'sunset'       # sunrise OR sunset
+if len(sys.argv) == 2:
+    event_type = sys.argv[1]
+else:
+    event_type = 'sunrise'
 debug          = True           # development flag
 internet       = True            # Internet connection flag
 still_interval = 1000            # still interval in milliseconds

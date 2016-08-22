@@ -31,4 +31,4 @@ You can make use of the following commands to debug your camera's setup and netw
 
 ####To-do
 - Change the sunrise web page to make it easier to use the camera in other locations
-
+- Enable optional use of command line arguments

@@ -5,10 +5,11 @@
 import requests
 import re
 import textwrap
+import os
+import sys
 from   subprocess  import Popen, PIPE, STDOUT
 from   datetime    import datetime
 from   time        import sleep
-import os
 
 # sunpise modules
 from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down, client_secrets
