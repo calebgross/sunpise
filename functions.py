@@ -46,7 +46,7 @@ def run_command(command):
 def print_title():
     title_char = '~'
     title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
-        event_type.capitalize()  + ' ' + '–'*(len(event_type)%2+2) + ' ' + 
+        event_type.capitalize()  + ' ' + '-'*(len(event_type)%2+2) + ' ' + 
         datetime.now().strftime('%d %b %Y'))
     title_margin = int(40 - float(len(title) + 2)/2)
     print(title_char * (2 * title_margin + 2 + len(title)))

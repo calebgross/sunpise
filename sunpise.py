@@ -3,7 +3,7 @@
 
 from functions import *
 
-event_type     = 'sunrise'       # sunrise OR sunset
+event_type     = 'sunset'       # sunrise OR sunset
 debug          = False           # development flag
 internet       = True            # Internet connection flag
 still_interval = 1000            # still interval in milliseconds
