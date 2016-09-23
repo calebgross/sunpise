@@ -2,17 +2,24 @@
 # -*- coding: utf-8 -*-
 
 # standard modules
-import requests
-import re
-import textwrap
-import os
-import sys
+import requests, re, textwrap, os, sys, argparse, json
 from   subprocess  import Popen, PIPE, STDOUT
 from   datetime    import datetime
 from   time        import sleep
 
 # sunpise modules
-from   sunpise     import debug, internet, still_interval, location, event_type, sunpise_dir, upside_down, client_secrets
+from   sunpise    import (
+    debug,
+    internet,
+    still_interval,
+    event_type,
+    sunpise_dir,
+    upside_down,
+    client_secrets,
+    city,
+    coordinates,
+    location
+    )
 
 def run_command(command):
 
@@ -26,23 +33,6 @@ def run_command(command):
     # execute command
     if not debug:
         os.system(command)
-    #    event = Popen(
-    #        command,
-    #        shell     = True,
-    #        stdin     = PIPE,
-    #        stdout    = PIPE,
-    #        stderr    = STDOUT,
-    #        close_fds = True
-    #        )
-
-        # poll process for new output until finished
-        #while True:
-        #    next_line = event.stdout.readline()
-        #    if next_line == '' and event.poll() != None:
-        #       break
-        #    if next_line == '' or next_line.isspace():
-        #        break
-        #    print(next_line),
 
 def print_title():
     title_char = '~'
@@ -65,49 +55,30 @@ def print_times(event_times):
 # get times for dawn and sunshine from the web
 def get_event_times():
 
-    # retrieve data
-    url = 'http://www.gaisma.com/en/location/' + location + '.html'
-    
-    html_formatted = ''
-    if debug and not internet:
-        html = open('sunrise.html')
-        for line in html:
-            html_formatted += line.strip()
-    else:
-        html = requests.get(url).text
-        for line in html.split('\n'):
-            html_formatted += line.strip()
-
-    # pull desired data from html source
-    pattern = (
-        r'<table class="sun-data" id="future-days-table">' +
-        r'<tr>(.*?)</tr><tr.*?>(.*?)</tr>'
-        )
-    match = re.search(pattern, html_formatted)
-
-    # split data into lists
-    listify = lambda item: re.sub(
-        r'<.*?>(?P<match>.*?)</.*?>',
-        r'\1,',
-        item).split(',')[:-1]
-    header = listify(match.group(1))
-    times = listify(match.group(2))
-
-    # get start/end datetimes for sunrise/sunset
+   # get start/end datetimes for sunrise/sunset
     event_names    = {
-    'sunrise': {'start': 'dawn',   'end': 'sunrise'},
-    'sunset' : {'start': 'sunset', 'end': 'dusk'}
+        'sunrise': {
+            'start': 'civil_twilight_begin',
+            'end':   'sunrise'
+        },
+        'sunset' : {
+            'start': 'sunset',
+            'end':   'civil_twilight_end'
+        }    
     }
+
+    payload = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
+    url = 'http://api.sunrise-sunset.org/json'
+    response = json.loads(requests.get(url, params=payload).text)['results']
+
     event_times = {}
     today = datetime.now().date()
     for event_name in sorted(event_names[event_type].keys()):
-        event_time_index = header.index(
-            event_names[event_type][event_name].capitalize())
         event_time = datetime.strptime(
-            times[event_time_index], '%H:%M').replace(
+            response[event_names[event_type][event_name]][:4], '%H:%M').replace(
             year=today.year, month=today.month, day=today.day)
         event_times[event_name] = event_time
-
+    
     return event_times
 
 # wait until dawn
@@ -150,17 +121,18 @@ def capture(event_times):
     run_command(capture)  
     
     # account for unprocessed stills so avconv can process input
-    filenames = os.listdir('/home/pi/sunpise/stills')
-    change_filename = lambda filename, new_filename: ('mv ' +
-        '/home/pi/sunpise/stills/' + filename +
-        ' ' +
-        '/home/pi/sunpise/stills/' + new_filename
-        )
-    i = 0
-    for filename in sorted(filenames):
-        new_filename = 'still_' + str(int(i)).zfill(4) + '.jpg'
-        os.system(change_filename(filename, new_filename))
-        i += 1
+    if not debug:
+        filenames = os.listdir('/home/pi/sunpise/stills')
+        change_filename = lambda filename, new_filename: ('mv ' +
+            '/home/pi/sunpise/stills/' + filename +
+            ' ' +
+            '/home/pi/sunpise/stills/' + new_filename
+            )
+        i = 0
+        for filename in sorted(filenames):
+            new_filename = 'still_' + str(int(i)).zfill(4) + '.jpg'
+            os.system(change_filename(filename, new_filename))
+            i += 1
 
     return
 

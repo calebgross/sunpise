@@ -7,13 +7,16 @@ if len(sys.argv) == 2:
     event_type = sys.argv[1]
 else:
     event_type = 'sunrise'
-debug          = True           # development flag
-internet       = True            # Internet connection flag
-still_interval = 1000            # still interval in milliseconds
-location       = 'kailua-hawaii' # camera location
+debug          = True           
+internet       = True           
+still_interval = 1000           
+location       = 'kailua-hawaii'
 sunpise_dir    = '/home/pi/sunpise/'
 client_secrets = 'client_secrets.json'
 upside_down    = True
+ip_info        = json.loads(requests.get('http://ipinfo.io').text)
+city           = ip_info['city']
+coordinates    = ip_info['loc'].split(',')
 
 def main():
 

@@ -1,6 +1,7 @@
 __pycache__/*
+*getsunrise*
 sunrise.html
 *.avi
 stills/*.jpg
-sunpise_log.txt*
+*log*
 client_secrets.json
