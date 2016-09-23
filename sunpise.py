@@ -27,19 +27,19 @@ def main():
     event_times = get_event_times()
     print_times(event_times)
 
-    # # 2) wait until dawn to start timelapse
+    # 2) wait until dawn to start timelapse
     wait_until(event_times['start'])
 
-    # # 3) start capturing stills
+    # 3) start capturing stills
     capture(event_times) 
 
-    # # 4) make video
+    # 4) make video
     video_name = stitch()            
 
-    # # 5) upload video
+    # 5) upload video
     upload(video_name)             
 
-    # # 6) remove files from device      
+    # 6) remove files from device      
     cleanup()                  
 
     print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
