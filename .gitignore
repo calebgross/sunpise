@@ -6,3 +6,4 @@ stills/*.jpg
 *log*
 client_secrets.json
 misc/*
+*oauth2.json

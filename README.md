@@ -9,7 +9,7 @@ Ensure the following packages are installed before attempting to run `sunpise.py
 - [python3](https://www.python.org/download/releases/3.0/)
 - [python-picamera](https://www.raspberrypi.org/documentation/usage/camera/python/README.md)
 - [libav-tools](https://libav.org/)
-- [youtube-upload](https://github.com/tokland/youtube-upload)
+- [google-api-python-client](https://github.com/google/google-api-python-client)
 
 This script is launched in the Pi's Linux environment using `cron`. You can create the following job by entering the command `crontab -e` job and pasting the following line at the end of the config file :
 

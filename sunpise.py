@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import requests, re, textwrap, os, sys, argparse, json
-from   subprocess  import Popen, PIPE, STDOUT
-from   datetime    import datetime
-from   time        import sleep
+import requests, re, textwrap, os, sys, argparse, json, upload_video
+from   argparse         import Namespace
+from   apiclient.errors import HttpError
+from   subprocess       import Popen, PIPE, STDOUT
+from   datetime         import datetime
+from   time             import sleep
 
 if len(sys.argv) == 2:
     event_type = sys.argv[1]
@@ -141,7 +143,8 @@ def capture(event_times):
         )
     if upside_down:
         capture += ' --hflip --vflip'
-    print('\n==> Step 1 of 4 ('+datetime.now().strftime('%H:%M')+'): Capturing stills...')
+    print('\n==> Step 1 of 4 (' +
+        datetime.now().strftime('%H:%M') + '): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(still_interval/1000))+ ' seconds for ' +
@@ -175,7 +178,8 @@ def stitch():
         '-s 1920x1080 ' + 
         sunpise_dir + video_name
         )
-    print('\n==> Step 2 of 4 ('+datetime.now().strftime('%H:%M')+'): Stitching frames together...')
+    print('\n==> Step 2 of 4 (' +
+        datetime.now().strftime('%H:%M') + '): Stitching frames together...')
     run_command(make_video)
     return video_name
 
@@ -183,22 +187,36 @@ def stitch():
 def upload(video_name):
     location_formatted = re.sub(r'-.*', '', location).capitalize()
     event_type_formatted = event_type.capitalize()
-    upload = (
-        '/usr/local/bin/youtube-upload ' + 
-        '-t "' + location_formatted + ' ' + event_type_formatted + ' - ' +
-            datetime.now().strftime('%d %b %Y') + '" ' +
-        '-c Entertainment ' + 
-	'--client-secrets=' + sunpise_dir + client_secrets + ' ' +
-        sunpise_dir + video_name
+    if debug:
+        sunpise_dir = ''
+        video_name = 'test.avi'
+    args = Namespace(
+        auth_host_name='localhost', 
+        auth_host_port=[8080, 8090], 
+        category='22', 
+        description='Test Description', 
+        file=sunpise_dir + video_name, 
+        keywords='', 
+        logging_level='ERROR',
+        noauth_local_webserver=True,
+        privacyStatus='public',
+        title=location_formatted + ' ' + event_type_formatted + ' - ' + 
+            datetime.now().strftime('%d %b %Y')
         )
-    print('\n==> Step 3 of 4 ('+datetime.now().strftime('%H:%M')+'): Uploading video...')
-    run_command(upload)
+    youtube = upload_video.get_authenticated_service(args)
+    print('\n==> Step 3 of 4 (' +
+        datetime.now().strftime('%H:%M') + '): Uploading video...')
+    try:
+        upload_video.initialize_upload(youtube, args)
+    except HttpError as e:
+        print(("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)))
     return
 
 # delete files
 def cleanup():
     cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
-    print('\n==> Step 4 of 4 ('+datetime.now().strftime('%H:%M')+'): Removing files...')
+    print('\n==> Step 4 of 4 (' +
+        datetime.now().strftime('%H:%M') + '): Removing files...')
     run_command(cleanup)
     return
 
