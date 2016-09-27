@@ -35,4 +35,3 @@ You can make use of the following commands to debug your camera's setup and netw
 - Enable optional use of command line arguments to specify event details
 - Implement error handling
 - Switch from `os` to `subprocess`
-- Stop using regex to [parse HTML](http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags) 
