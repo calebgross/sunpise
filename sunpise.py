@@ -26,11 +26,10 @@ coordinates    = ip_info['loc'].split(',')
 def main():
 
     # log heading
-    print_title()
+    print_header()
 
     # 1) get event times
     event_times = get_event_times()
-    print_times(event_times)
 
     # 2) wait until dawn to start timelapse
     wait_until(event_times['start'])
@@ -49,8 +48,6 @@ def main():
 
     print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
 
-
-
 def run_command(command):
 
     # log command
@@ -64,7 +61,7 @@ def run_command(command):
     if not debug:
         os.system(command)
 
-def print_title():
+def print_header():
     title_char = '~'
     title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
         event_type.capitalize()  + ' ' + '-'*(len(event_type)%2+2) + ' ' + 
@@ -86,7 +83,14 @@ def print_times(event_times):
 def get_event_times():
 
    # get start/end datetimes for sunrise/sunset
-    event_names    = {
+    payload     = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
+    url         = 'http://api.sunrise-sunset.org/json'
+    response    = json.loads(requests.get(url, params=payload).text)['results']
+    
+    # initialize data structures to iterate through response
+    event_times = {}
+    today       = datetime.now().date()
+    event_names = {
         'sunrise': {
             'start': 'civil_twilight_begin',
             'end':   'sunrise'
@@ -97,18 +101,16 @@ def get_event_times():
         }    
     }
 
-    payload = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
-    url = 'http://api.sunrise-sunset.org/json'
-    response = json.loads(requests.get(url, params=payload).text)['results']
-
-    event_times = {}
-    today = datetime.now().date()
+    # for events start and end
     for event_name in sorted(event_names[event_type].keys()):
-        event_time = datetime.strptime(
+        
+        # create datetime with today's date and respective event time
+        event_times[event_name] = datetime.strptime(
             response[event_names[event_type][event_name]][:4], '%H:%M').replace(
             year=today.year, month=today.month, day=today.day)
-        event_times[event_name] = event_time
     
+    # log and return event times
+    print_times(event_times)
     return event_times
 
 # wait until dawn
@@ -118,7 +120,11 @@ def wait_until(start):
 
     # check if sun is rising/setting
     if datetime.now() >= start or debug:
-        print('sun has started rising/setting. Starting timelapse.')
+        if event_type == 'sunrise':
+            action = 'rising'
+        elif event_type == 'sunset':
+            action = 'setting'
+        print('sun has started ' + action + '. Starting timelapse.')
         return
 
     # wait until start and check again
