@@ -1,26 +1,31 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import requests, re, textwrap, os, sys, argparse, json, upload_video
-from   argparse         import Namespace
+import requests
+import re
+import textwrap
+import os
+import argparse
+import json
+import upload_video
 from   apiclient.errors import HttpError
 from   subprocess       import Popen, PIPE, STDOUT
 from   datetime         import datetime
 from   time             import sleep
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-D','--debug', action='store_true', help='Debug mode', default=False)
-parser.add_argument('-u','--upside-down', action='store_true', default=False, help='Lens positioned upside-down')
-parser.add_argument('-e','--event-type', choices=['sunrise', 'sunset'], default='sunrise', help='Sunrise or sunset')
-parser.add_argument('-i','--still-interval', default=1000, help='Exposure length',)
-parser.add_argument('-d','--directory', default=os.getcwd()+'/', help='Directory where sunpise files are stored')
-parser.add_argument('-s','--client-secrets', default='client_secrets.json', help='Client secrets file')
-parser.add_argument('-l','--location', required=True, help='Camera\'s geographic location')
-args = vars(parser.parse_args())
+ip_info     = json.loads(requests.get('http://ipinfo.io').text)
+city        = ip_info['city']
+coordinates = ip_info['loc'].split(',')
 
-ip_info        = json.loads(requests.get('http://ipinfo.io').text)
-city           = ip_info['city']
-coordinates    = ip_info['loc'].split(',')
+parser = argparse.ArgumentParser()
+parser.add_argument('-D','--debug', action='store_true', help='debug mode', default=False)
+parser.add_argument('-u','--upside-down', action='store_true', default=False, help='lens positioned upside-down')
+parser.add_argument('-e','--event-type', choices=['sunrise', 'sunset'], default='sunrise', help='sunrise or sunset')
+parser.add_argument('-l','--location', default=city, help='camera\'s geographic location')
+parser.add_argument('-i','--still-interval', default=1000, help='exposure length',)
+parser.add_argument('-d','--directory', default=os.getcwd()+'/', help='directory where sunpise files are stored')
+parser.add_argument('-s','--client-secrets', default='client_secrets.json', help='client secrets file')
+args = vars(parser.parse_args())
 
 def main():
 
@@ -62,7 +67,7 @@ def run_command(command):
 
 def print_header():
     title_char = '~'
-    title = (re.sub(r'-.*', '', args['location']).capitalize() + ' ' +
+    title = (args['location'].capitalize() + ' ' +
         args['event_type'].capitalize()  + ' ' + '-'*(len(args['event_type'])%2+2) + ' ' + 
         datetime.now().strftime('%d %b %Y'))
     title_margin = int(40 - float(len(title) + 2)/2)
@@ -119,11 +124,9 @@ def wait_until(start):
 
     # check if sun is rising/setting
     if datetime.now() >= start or args['debug']:
-        if args['event_type'] == 'sunrise':
-            action = 'rising'
-        elif args['event_type'] == 'sunset':
-            action = 'setting'
-        print('sun has started ' + action + '. Starting timelapse.')
+        print('sun has started ' +
+            ('rising' if args['event_type'] == 'sunrise' else 'setting') +
+            '. Starting timelapse.')
         return
 
     # wait until start and check again
@@ -138,7 +141,6 @@ def wait_until(start):
 # take pictures
 def capture(event_times):
     capture_interval = event_times['end'] - event_times['start']
-    #capture_interval = 300000
     capture = (
         'raspistill ' +
         '--burst ' + 
@@ -195,7 +197,7 @@ def upload(video_name):
     if args['debug']:
         args['directory'] = ''
         video_name = 'test.avi'
-    yt_args = Namespace(
+    yt_args = argparse.Namespace(
         auth_host_name='localhost', 
         auth_host_port=[8080, 8090], 
         category='22', 
