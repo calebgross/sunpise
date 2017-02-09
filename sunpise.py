@@ -8,17 +8,16 @@ from   subprocess       import Popen, PIPE, STDOUT
 from   datetime         import datetime
 from   time             import sleep
 
-if len(sys.argv) == 2:
-    event_type = sys.argv[1]
-else:
-    event_type = 'sunrise'
-debug          = True           
-internet       = True           
-still_interval = 1000           
-location       = 'kailua-hawaii'
-sunpise_dir    = '/home/pi/sunpise/'
-client_secrets = 'client_secrets.json'
-upside_down    = True
+parser = argparse.ArgumentParser()
+parser.add_argument('-D','--debug', action='store_true', help='Debug mode', default=False)
+parser.add_argument('-u','--upside-down', action='store_true', default=False, help='Lens positioned upside-down')
+parser.add_argument('-e','--event-type', choices=['sunrise', 'sunset'], default='sunrise', help='Sunrise or sunset')
+parser.add_argument('-i','--still-interval', default=1000, help='Exposure length',)
+parser.add_argument('-d','--directory', default=os.getcwd()+'/', help='Directory where sunpise files are stored')
+parser.add_argument('-s','--client-secrets', default='client_secrets.json', help='Client secrets file')
+parser.add_argument('-l','--location', required=True, help='Camera\'s geographic location')
+args = vars(parser.parse_args())
+
 ip_info        = json.loads(requests.get('http://ipinfo.io').text)
 city           = ip_info['city']
 coordinates    = ip_info['loc'].split(',')
@@ -58,18 +57,18 @@ def run_command(command):
     print(wrapper.fill(printed_command))
 
     # execute command
-    if not debug:
+    if not args['debug']:
         os.system(command)
 
 def print_header():
     title_char = '~'
-    title = (re.sub(r'-.*', '', location).capitalize() + ' ' +
-        event_type.capitalize()  + ' ' + '-'*(len(event_type)%2+2) + ' ' + 
+    title = (re.sub(r'-.*', '', args['location']).capitalize() + ' ' +
+        args['event_type'].capitalize()  + ' ' + '-'*(len(args['event_type'])%2+2) + ' ' + 
         datetime.now().strftime('%d %b %Y'))
     title_margin = int(40 - float(len(title) + 2)/2)
     print(title_char * (2 * title_margin + 2 + len(title)))
     print(title_char * title_margin, title, title_char * title_margin)
-    if debug:
+    if args['debug']:
         print(title_char * (2 * title_margin + 2 + len(title)))
         print(title_char * 34, 'DEBUG MODE', title_char * 34)
     print(title_char * (2 * title_margin + 2 + len(title)), end='\n\n')
@@ -102,11 +101,11 @@ def get_event_times():
     }
 
     # for events start and end
-    for event_name in sorted(event_names[event_type].keys()):
+    for event_name in sorted(event_names[args['event_type']].keys()):
         
         # create datetime with today's date and respective event time
         event_times[event_name] = datetime.strptime(
-            response[event_names[event_type][event_name]][:4], '%H:%M').replace(
+            response[event_names[args['event_type']][event_name]][:4], '%H:%M').replace(
             year=today.year, month=today.month, day=today.day)
     
     # log and return event times
@@ -119,10 +118,10 @@ def wait_until(start):
     print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
 
     # check if sun is rising/setting
-    if datetime.now() >= start or debug:
-        if event_type == 'sunrise':
+    if datetime.now() >= start or args['debug']:
+        if args['event_type'] == 'sunrise':
             action = 'rising'
-        elif event_type == 'sunset':
+        elif args['event_type'] == 'sunset':
             action = 'setting'
         print('sun has started ' + action + '. Starting timelapse.')
         return
@@ -143,22 +142,22 @@ def capture(event_times):
     capture = (
         'raspistill ' +
         '--burst ' + 
-        '-o ' + sunpise_dir + 'stills/still_%04d.jpg ' +
-        '-tl ' + str(still_interval) + ' ' +
+        '-o ' + args['directory'] + 'stills/still_%04d.jpg ' +
+        '-tl ' + str(args['still_interval']) + ' ' +
         '-t ' + str(capture_interval.seconds*1000)
         )
-    if upside_down:
+    if args['upside_down']:
         capture += ' --hflip --vflip'
     print('\n==> Step 1 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
-        str(int(still_interval/1000))+ ' seconds for ' +
+        str(int(args['still_interval']/1000))+ ' seconds for ' +
         str(int(capture_interval.seconds/60)) + ' minutes.')
     run_command(capture)  
     
     # account for unprocessed stills so avconv can process input
-    if not debug:
+    if not args['debug']:
         filenames = os.listdir('/home/pi/sunpise/stills')
         change_filename = lambda filename, new_filename: ('mv ' +
             '/home/pi/sunpise/stills/' + filename +
@@ -179,10 +178,10 @@ def stitch():
     make_video = (
         'avconv ' +
         '-f image2 ' + 
-        '-i ' + sunpise_dir + 'stills/still_%04d.jpg ' + 
+        '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
         '-r 12 ' + 
         '-s 1920x1080 ' + 
-        sunpise_dir + video_name
+        args['directory'] + video_name
         )
     print('\n==> Step 2 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Stitching frames together...')
@@ -191,17 +190,17 @@ def stitch():
 
 # upload to YouTube
 def upload(video_name):
-    location_formatted = re.sub(r'-.*', '', location).capitalize()
-    event_type_formatted = event_type.capitalize()
-    if debug:
-        sunpise_dir = ''
+    location_formatted = re.sub(r'-.*', '', args['location']).capitalize()
+    event_type_formatted = args['event_type'].capitalize()
+    if args['debug']:
+        args['directory'] = ''
         video_name = 'test.avi'
-    args = Namespace(
+    yt_args = Namespace(
         auth_host_name='localhost', 
         auth_host_port=[8080, 8090], 
         category='22', 
         description='Test Description', 
-        file=sunpise_dir + video_name, 
+        file=args['directory'] + video_name, 
         keywords='', 
         logging_level='ERROR',
         noauth_local_webserver=True,
@@ -209,18 +208,18 @@ def upload(video_name):
         title=location_formatted + ' ' + event_type_formatted + ' - ' + 
             datetime.now().strftime('%d %b %Y')
         )
-    youtube = upload_video.get_authenticated_service(args)
+    youtube = upload_video.get_authenticated_service(yt_args)
     print('\n==> Step 3 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Uploading video...')
     try:
-        upload_video.initialize_upload(youtube, args)
+        upload_video.initialize_upload(youtube, yt_args)
     except HttpError as e:
         print(("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)))
     return
 
 # delete files
 def cleanup():
-    cleanup = 'rm ' + sunpise_dir + 'stills/*.jpg; rm ' + sunpise_dir +'*.avi'
+    cleanup = 'rm ' + args['directory'] + 'stills/*.jpg; rm ' + args['directory'] +'*.avi'
     print('\n==> Step 4 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Removing files...')
     run_command(cleanup)
