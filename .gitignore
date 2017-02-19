@@ -7,3 +7,4 @@ stills/*.jpg
 client_secrets.json
 misc/*
 *oauth2.json
+install_history.txt

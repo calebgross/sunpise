@@ -8,9 +8,10 @@ import os
 import argparse
 import json
 import upload_video
+import pprint
 from   apiclient.errors import HttpError
 from   subprocess       import Popen, PIPE, STDOUT
-from   datetime         import datetime
+from   datetime         import datetime, timedelta
 from   time             import sleep
 
 ip_info     = json.loads(requests.get('http://ipinfo.io').text)
@@ -22,9 +23,11 @@ parser.add_argument('-D','--debug', action='store_true', help='debug mode', defa
 parser.add_argument('-u','--upside-down', action='store_true', default=False, help='lens positioned upside-down')
 parser.add_argument('-e','--event-type', choices=['sunrise', 'sunset'], default='sunrise', help='sunrise or sunset')
 parser.add_argument('-l','--location', default=city, help='camera\'s geographic location')
-parser.add_argument('-i','--still-interval', default=1000, help='exposure length',)
+parser.add_argument('-s','--still-interval', type=int, default=1000, help='individual frame exposure length, in milliseconds')
+parser.add_argument('-c','--capture-interval', type=int, default=60, help='duration of recording, in seconds (use with -n)')
+parser.add_argument('-n','--start-now', action='store_true', default=False, help='start recording now')
 parser.add_argument('-d','--directory', default=os.getcwd()+'/', help='directory where sunpise files are stored')
-parser.add_argument('-s','--client-secrets', default='client_secrets.json', help='client secrets file')
+parser.add_argument('-f','--client-secrets', default='client_secrets.json', help='client secrets file')
 args = vars(parser.parse_args())
 
 def main():
@@ -33,14 +36,22 @@ def main():
     print_header()
 
     # 1) get event times
-    event_times = get_event_times()
-
+    if not args['start_now']:
+        event_times = get_event_times()
+    else:
+        now = datetime.now()
+        event_times = {
+            'start': now,
+            'end': now + timedelta(0, int(args['capture_interval']))
+            }
+    print_times(event_times)
+    
     # 2) wait until dawn to start timelapse
     wait_until(event_times['start'])
-
+    
     # 3) start capturing stills
-    capture(event_times) 
-
+    capture(event_times)
+    
     # 4) make video
     video_name = stitch()            
 
@@ -114,7 +125,7 @@ def get_event_times():
             year=today.year, month=today.month, day=today.day)
     
     # log and return event times
-    print_times(event_times)
+    
     return event_times
 
 # wait until dawn
@@ -140,13 +151,16 @@ def wait_until(start):
 
 # take pictures
 def capture(event_times):
-    capture_interval = event_times['end'] - event_times['start']
+    if not args['start_now']:
+        capture_interval = (event_times['end'] - event_times['start']).seconds
+    else:
+        capture_interval = args['capture_interval']
     capture = (
         'raspistill ' +
         '--burst ' + 
         '-o ' + args['directory'] + 'stills/still_%04d.jpg ' +
         '-tl ' + str(args['still_interval']) + ' ' +
-        '-t ' + str(capture_interval.seconds*1000)
+        '-t ' + str(capture_interval*1000)
         )
     if args['upside_down']:
         capture += ' --hflip --vflip'
@@ -155,7 +169,7 @@ def capture(event_times):
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(args['still_interval']/1000))+ ' seconds for ' +
-        str(int(capture_interval.seconds/60)) + ' minutes.')
+        str(int(capture_interval/60)) + ' minutes.')
     run_command(capture)  
     
     # account for unprocessed stills so avconv can process input
