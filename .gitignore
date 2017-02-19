@@ -9,3 +9,7 @@ misc/*
 *oauth2.json
 install_history.txt
 upload_video.py
+.viminfo
+.selected_editor
+.bash_history
+.youtube-upload-credentials.json
