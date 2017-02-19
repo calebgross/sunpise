@@ -151,8 +151,10 @@ def get_event_times():
         event_times[event_name] = datetime.strptime(
             response[event_names[args['event_type']][event_name]],
             '%I:%M:%S %p'
-            ).replace(tzinfo=UTC).astimezone(tzlocal()).replace(
-                year=today.year, month=today.month, day=today.day)
+            ).replace(
+            year=today.year, tzinfo=UTC
+            ).astimezone(tzlocal()).replace(
+            year=today.year, month=today.month, day=today.day)
     
     return event_times
 
