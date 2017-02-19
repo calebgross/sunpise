@@ -33,15 +33,24 @@ city        = ip_info['city']
 coordinates = ip_info['loc'].split(',')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-D','--debug', action='store_true', help='debug mode', default=False)
-parser.add_argument('-u','--upside-down', action='store_true', default=False, help='lens positioned upside-down')
-parser.add_argument('-e','--event-type', choices=['sunrise', 'sunset'], default='sunrise', help='sunrise or sunset')
-parser.add_argument('-l','--location', default=city, help='camera\'s geographic location')
-parser.add_argument('-s','--still-interval', type=int, default=1000, help='individual frame exposure length, in milliseconds')
-parser.add_argument('-c','--capture-interval', type=int, default=60, help='duration of recording, in seconds (use with -n)')
-parser.add_argument('-n','--start-now', action='store_true', default=False, help='start recording now')
-parser.add_argument('-d','--directory', default=os.getcwd()+'/', help='directory where sunpise files are stored')
-parser.add_argument('-f','--client-secrets', default='client_secrets.json', help='client secrets file')
+parser.add_argument('-c','--capture-interval', type=int, default=60,
+    help='duration of recording, in seconds (use with -n)')
+parser.add_argument('-D','--debug', action='store_true', default=False,
+    help='debug mode')
+parser.add_argument('-d','--directory', default=os.getcwd()+'/',
+    help='directory where sunpise files are stored')
+parser.add_argument('-e','--event-type', default='sunrise',
+    help='sunrise or sunset', choices=['sunrise', 'sunset'])
+parser.add_argument('-f','--client-secrets', default='client_secrets.json',
+    help='client secrets file')
+parser.add_argument('-l','--location', default=city,
+    help='camera\'s geographic location')
+parser.add_argument('-n','--start-now', action='store_true', default=False,
+    help='start recording now')
+parser.add_argument('-s','--still-interval', type=int, default=1000,
+    help='individual frame exposure length, in milliseconds')
+parser.add_argument('-u','--upside-down', action='store_true', default=False,
+    help='lens positioned upside-down')
 args = vars(parser.parse_args())
 
 def main():
@@ -93,7 +102,8 @@ def run_command(command):
 def print_header():
     title_char = '~'
     title = (args['location'].capitalize() + ' ' +
-        args['event_type'].capitalize()  + ' ' + '-'*(len(args['event_type'])%2+2) + ' ' + 
+        args['event_type'].capitalize()  + ' ' +
+        '-'*(len(args['event_type'])%2+2) + ' ' + 
         datetime.now().strftime('%d %b %Y'))
     title_margin = int(40 - float(len(title) + 2)/2)
     print(title_char * (2 * title_margin + 2 + len(title)))
@@ -112,9 +122,9 @@ def print_times(event_times):
 def get_event_times():
 
    # get start/end datetimes for sunrise/sunset
-    payload     = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
-    url         = 'http://api.sunrise-sunset.org/json'
-    response    = json.loads(requests.get(url, params=payload).text)['results']
+    payload  = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
+    url      = 'http://api.sunrise-sunset.org/json'
+    response = json.loads(requests.get(url, params=payload).text)['results']
     
     # initialize data structures to iterate through response
     event_times = {}
@@ -135,8 +145,8 @@ def get_event_times():
         
         # create datetime with today's date and respective event time
         event_times[event_name] = datetime.strptime(
-            response[event_names[args['event_type']][event_name]][:4], '%H:%M').replace(
-            year=today.year, month=today.month, day=today.day)
+            response[event_names[args['event_type']][event_name]][:4],
+            '%H:%M').replace(year=today.year, month=today.month, day=today.day)
     
     # log and return event times
     
@@ -266,10 +276,12 @@ def resumable_upload(insert_request):
   error = None
   retry = 0
   MAX_RETRIES = 10
-  RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, http.client.NotConnected,
-    http.client.IncompleteRead, http.client.ImproperConnectionState,
-    http.client.CannotSendRequest, http.client.CannotSendHeader,
-    http.client.ResponseNotReady, http.client.BadStatusLine)
+  RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
+  RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError,
+    http.client.NotConnected, http.client.IncompleteRead,
+    http.client.ImproperConnectionState, http.client.CannotSendRequest,
+    http.client.CannotSendHeader, http.client.ResponseNotReady,
+    http.client.BadStatusLine)
   while response is None:
     try:
       print("Uploading file...")
@@ -280,7 +292,6 @@ def resumable_upload(insert_request):
         else:
           exit("The upload failed with an unexpected response: %s" % response)
     except HttpError as e:
-      RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
       if e.resp.status in RETRIABLE_STATUS_CODES:
         error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
                                                              e.content)
@@ -327,12 +338,14 @@ def upload(video_name):
         try:
             initialize_upload(youtube, yt_args)
         except HttpError as e:
-            print(("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)))
+            print(("An HTTP error %d occurred:\n%s" %
+                (e.resp.status, e.content)))
     return
 
 # delete files
 def cleanup():
-    cleanup = 'rm ' + args['directory'] + 'stills/*.jpg; rm ' + args['directory'] +'*.avi'
+    cleanup = ('rm ' + args['directory'] + 'stills/*.jpg; rm ' +
+        args['directory'] + '*.avi')
     print('\n==> Step 4 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Removing files...')
     run_command(cleanup)

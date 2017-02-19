@@ -31,7 +31,6 @@ You can make use of the following commands to debug your camera's setup and netw
 		raspivid -t 999999 -o - | nc [insert the IP address of the client] 5001
 
 ####To-do
-- Change the sunrise web page to make it easier to use the camera in other locations
-- Enable optional use of command line arguments to specify event details
 - Implement error handling
 - Switch from `os` to `subprocess`
+- Automate OAuth 2.0 initial verification/authentication
