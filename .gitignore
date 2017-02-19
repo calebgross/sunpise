@@ -13,3 +13,5 @@ upload_video.py
 .selected_editor
 .bash_history
 .youtube-upload-credentials.json
+.git-credentials
+.gitconfig
