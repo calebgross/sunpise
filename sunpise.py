@@ -1,18 +1,32 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# sunpise core
 import requests
 import re
 import textwrap
 import os
 import argparse
 import json
-import upload_video
 import pprint
-from   apiclient.errors import HttpError
-from   subprocess       import Popen, PIPE, STDOUT
-from   datetime         import datetime, timedelta
-from   time             import sleep
+from   subprocess import Popen, PIPE, STDOUT
+from   datetime   import datetime, timedelta
+from   time       import sleep
+
+# upload video
+import http.client
+import httplib2
+import random
+import sys
+import time
+from   apiclient.discovery import build
+from   apiclient.errors    import HttpError
+from   apiclient.http      import MediaFileUpload
+from   oauth2client.client import flow_from_clientsecrets
+from   oauth2client.file   import Storage
+from   oauth2client.tools  import argparser, run_flow
+
+httplib2.RETRIES = 1
 
 ip_info     = json.loads(requests.get('http://ipinfo.io').text)
 city        = ip_info['city']
@@ -204,13 +218,95 @@ def stitch():
     run_command(make_video)
     return video_name
 
+def get_authenticated_service(args):
+
+  flow = flow_from_clientsecrets("client_secrets.json",
+    scope="https://www.googleapis.com/auth/youtube.upload",
+    message="WARNING: Please configure OAuth 2.0")
+
+  storage = Storage("%s-oauth2.json" % sys.argv[0])
+  credentials = storage.get()
+
+  if credentials is None or credentials.invalid:
+    credentials = run_flow(flow, storage, args)
+
+  return build("youtube", "v3",
+    http=credentials.authorize(httplib2.Http()))
+
+def initialize_upload(youtube, options):
+  tags = None
+  if options.keywords:
+    tags = options.keywords.split(",")
+
+  body=dict(
+    snippet=dict(
+      title=options.title,
+      description=options.description,
+      tags=tags,
+      categoryId=options.category
+    ),
+    status=dict(
+      privacyStatus=options.privacyStatus
+    )
+  )
+
+  # Call the API's videos.insert method to create and upload the video.
+  insert_request = youtube.videos().insert(
+    part=",".join(list(body.keys())),
+    body=body,
+    media_body=MediaFileUpload(options.file, chunksize=-1, resumable=True)
+  )
+
+  resumable_upload(insert_request)
+
+# This method implements an exponential backoff strategy to resume a
+# failed upload.
+def resumable_upload(insert_request):
+  response = None
+  error = None
+  retry = 0
+  MAX_RETRIES = 10
+  RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, http.client.NotConnected,
+    http.client.IncompleteRead, http.client.ImproperConnectionState,
+    http.client.CannotSendRequest, http.client.CannotSendHeader,
+    http.client.ResponseNotReady, http.client.BadStatusLine)
+  while response is None:
+    try:
+      print("Uploading file...")
+      status, response = insert_request.next_chunk()
+      if response is not None:
+        if 'id' in response:
+          print(("Video id '%s' was successfully uploaded." % response['id']))
+        else:
+          exit("The upload failed with an unexpected response: %s" % response)
+    except HttpError as e:
+      RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
+      if e.resp.status in RETRIABLE_STATUS_CODES:
+        error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
+                                                             e.content)
+      else:
+        raise
+    except RETRIABLE_EXCEPTIONS as e:
+      error = "A retriable error occurred: %s" % e
+
+    if error is not None:
+      print(error)
+      retry += 1
+      if retry > MAX_RETRIES:
+        exit("No longer attempting to retry.")
+
+      max_sleep = 2 ** retry
+      sleep_seconds = random.random() * max_sleep
+      print(("Sleeping %f seconds and then retrying..." % sleep_seconds))
+      time.sleep(sleep_seconds)
+
 # upload to YouTube
 def upload(video_name):
     location_formatted = re.sub(r'-.*', '', args['location']).capitalize()
     event_type_formatted = args['event_type'].capitalize()
     if args['debug']:
         args['directory'] = ''
-        video_name = 'test.avi'
+        video_name = 'drop.avi'
     yt_args = argparse.Namespace(
         auth_host_name='localhost', 
         auth_host_port=[8080, 8090], 
@@ -224,13 +320,14 @@ def upload(video_name):
         title=location_formatted + ' ' + event_type_formatted + ' - ' + 
             datetime.now().strftime('%d %b %Y')
         )
-    youtube = upload_video.get_authenticated_service(yt_args)
+    youtube = get_authenticated_service(yt_args)
     print('\n==> Step 3 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Uploading video...')
-    try:
-        upload_video.initialize_upload(youtube, yt_args)
-    except HttpError as e:
-        print(("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)))
+    if not args['debug']:
+        try:
+            initialize_upload(youtube, yt_args)
+        except HttpError as e:
+            print(("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)))
     return
 
 # delete files
