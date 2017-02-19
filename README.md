@@ -13,8 +13,8 @@ Ensure the following packages are installed before attempting to run `sunpise.py
 
 This script is launched in the Pi's Linux environment using `cron`. You can create the following job by entering the command `crontab -e` job and pasting the following line at the end of the config file :
 
-	0 5 * * * python3 /home/pi/sunpise/sunpise.py -e sunrise >> /home/pi/sunpise/sunpise_log.txt
-	0 17 * * * python3 /home/pi/sunpise/sunpise.py -e sunset >> /home/pi/sunpise/sunpise_log.txt
+	0 5 * * * python3 /home/pi/sunpise/sunpise.py -u -l Kailua -e sunrise >> /home/pi/sunpise/sunpise_log.txt
+	0 17 * * * python3 /home/pi/sunpise/sunpise.py -u -l Kailua -e sunset >> /home/pi/sunpise/sunpise_log.txt
 
 You can make use of the following commands to debug your camera's setup and network connection:
 

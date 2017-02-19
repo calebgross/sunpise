@@ -8,10 +8,11 @@ import textwrap
 import os
 import argparse
 import json
-import pprint
-from   subprocess import Popen, PIPE, STDOUT
-from   datetime   import datetime, timedelta
-from   time       import sleep
+from   subprocess  import Popen, PIPE, STDOUT
+from   datetime    import datetime, timedelta
+from   dateutil.tz import tzlocal
+from   pytz        import UTC
+from   time        import sleep
 
 # upload video
 import http.client
@@ -121,14 +122,14 @@ def print_times(event_times):
 # get times for dawn and sunshine from the web
 def get_event_times():
 
-   # get start/end datetimes for sunrise/sunset
+   # get sunrise/sunset info from API, loaded into JSON for easy parsing
     payload  = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
     url      = 'http://api.sunrise-sunset.org/json'
     response = json.loads(requests.get(url, params=payload).text)['results']
     
     # initialize data structures to iterate through response
     event_times = {}
-    today       = datetime.now().date()
+    today       = datetime.now()
     event_names = {
         'sunrise': {
             'start': 'civil_twilight_begin',
@@ -143,12 +144,15 @@ def get_event_times():
     # for events start and end
     for event_name in sorted(event_names[args['event_type']].keys()):
         
-        # create datetime with today's date and respective event time
+        # 1) create datetime object from API response string
+        # 2) make the datetime timezone-aware (API returns in UTC)
+        # 3) convert to local timezone
+        # 4) complete the datetime with local year, month, and day
         event_times[event_name] = datetime.strptime(
-            response[event_names[args['event_type']][event_name]][:4],
-            '%H:%M').replace(year=today.year, month=today.month, day=today.day)
-    
-    # log and return event times
+            response[event_names[args['event_type']][event_name]],
+            '%I:%M:%S %p'
+            ).replace(tzinfo=UTC).astimezone(tzlocal()).replace(
+                year=today.year, month=today.month, day=today.day)
     
     return event_times
 
@@ -158,7 +162,7 @@ def wait_until(start):
     print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
 
     # check if sun is rising/setting
-    if datetime.now() >= start or args['debug']:
+    if datetime.now().replace(tzinfo=tzlocal()) >= start:
         print('sun has started ' +
             ('rising' if args['event_type'] == 'sunrise' else 'setting') +
             '. Starting timelapse.')
@@ -166,10 +170,15 @@ def wait_until(start):
 
     # wait until start and check again
     else:
-        time_delta = start - datetime.now()
+        time_delta = start - datetime.now().replace(tzinfo=tzlocal())
         seconds_until_start = time_delta.seconds + 5
-        print('sleeping',str(seconds_until_start),
-              'seconds until',start.strftime('%H:%M'+'.'))
+        if seconds_until_start > 3600:
+            sleep_time = str(round(seconds_until_start/3600, 2)) + ' hours until'
+        elif seconds_until_start > 60:
+            sleep_time = str(round(seconds_until_start/60, 2)) + ' minutes until'
+        else:
+            sleep_time = str(seconds_until_start) + ' seconds until'
+        print('sleeping',sleep_time,start.strftime('%H:%M'+'.'))
         sleep(seconds_until_start)
         wait_until(start)
 
@@ -228,6 +237,7 @@ def stitch():
     run_command(make_video)
     return video_name
 
+# authenticate to YouTube (from youtube/api-samples)
 def get_authenticated_service(args):
 
   flow = flow_from_clientsecrets("client_secrets.json",
@@ -243,6 +253,7 @@ def get_authenticated_service(args):
   return build("youtube", "v3",
     http=credentials.authorize(httplib2.Http()))
 
+# initialize upload to YouTube (from youtube/api-samples)
 def initialize_upload(youtube, options):
   tags = None
   if options.keywords:
@@ -269,8 +280,7 @@ def initialize_upload(youtube, options):
 
   resumable_upload(insert_request)
 
-# This method implements an exponential backoff strategy to resume a
-# failed upload.
+# strategy to resume a failed upload (from youtube/api-samples)
 def resumable_upload(insert_request):
   response = None
   error = None
@@ -313,17 +323,16 @@ def resumable_upload(insert_request):
 
 # upload to YouTube
 def upload(video_name):
+
+    # prepare arguments to YouTube API
     location_formatted = re.sub(r'-.*', '', args['location']).capitalize()
     event_type_formatted = args['event_type'].capitalize()
-    if args['debug']:
-        args['directory'] = ''
-        video_name = 'drop.avi'
     yt_args = argparse.Namespace(
         auth_host_name='localhost', 
         auth_host_port=[8080, 8090], 
         category='22', 
         description='Test Description', 
-        file=args['directory'] + video_name, 
+        file=args['directory'] + (video_name if not args['debug'] else 'z.avi'), 
         keywords='', 
         logging_level='ERROR',
         noauth_local_webserver=True,
@@ -331,10 +340,16 @@ def upload(video_name):
         title=location_formatted + ' ' + event_type_formatted + ' - ' + 
             datetime.now().strftime('%d %b %Y')
         )
-    youtube = get_authenticated_service(yt_args)
+
     print('\n==> Step 3 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Uploading video...')
+
+    # authenticate to YouTube
+    youtube = get_authenticated_service(yt_args)
+
     if not args['debug']:
+
+        # initialize upload to YouTube
         try:
             initialize_upload(youtube, yt_args)
         except HttpError as e:
@@ -342,7 +357,7 @@ def upload(video_name):
                 (e.resp.status, e.content)))
     return
 
-# delete files
+# delete stills and video file
 def cleanup():
     cleanup = ('rm ' + args['directory'] + 'stills/*.jpg; rm ' +
         args['directory'] + '*.avi')
