@@ -322,7 +322,7 @@ def upload(video_name):
         auth_host_name='localhost', 
         auth_host_port=[8080, 8090], 
         category='22', 
-        description='Test Description', 
+        description='', 
         file=args['directory'] + (video_name if not args['debug'] else 'z.avi'), 
         keywords='', 
         logging_level='ERROR',
