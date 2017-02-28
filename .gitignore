@@ -16,3 +16,7 @@ upload_video.py
 .git-credentials
 .gitconfig
 stills/
+.python_history
+.ngrok2/
+.ssh/
+.lesshst
