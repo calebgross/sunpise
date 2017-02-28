@@ -189,10 +189,11 @@ def capture(event_times):
         capture_interval = args['capture_interval']
     stills_dir = args['directory'] + 'stills/'
     capture = ('raspistill ' +
+               '--roi 0.1,0.2,0.85,0.45' +
                '--burst ' + 
-               '-o ' + stills_dir + 'still_%04d.jpg ' +
-               '-tl ' + str(args['still_interval']) + ' ' +
-               '-t ' + str(capture_interval*1000))
+               '--output ' + stills_dir + 'still_%04d.jpg ' +
+               '--timelapse ' + str(args['still_interval']) + ' ' +
+               '--timeout ' + str(capture_interval*1000))
     if args['upside_down']:
         capture += ' --hflip --vflip'
     print('\n==> Step 1 of 4 (' +
@@ -217,10 +218,10 @@ def capture(event_times):
 def stitch():
     video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
     make_video = ('avconv ' +
+                  '-qscale 1 ' +
                   '-f image2 ' + 
                   '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
                   '-r 12 ' + 
-                  '-s 1920x1080 ' + 
                   args['directory'] + video_name)
     print('\n==> Step 2 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Stitching frames together...')
