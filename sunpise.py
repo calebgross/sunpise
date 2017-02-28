@@ -218,10 +218,10 @@ def capture(event_times):
 def stitch():
     video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
     make_video = ('avconv ' +
-                  '-qscale 1 ' +
                   '-f image2 ' + 
                   '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
                   '-r 12 ' + 
+                  '-qscale 1 ' +
                   args['directory'] + video_name)
     print('\n==> Step 2 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Stitching frames together...')
