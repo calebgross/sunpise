@@ -189,7 +189,7 @@ def capture(event_times):
         capture_interval = args['capture_interval']
     stills_dir = args['directory'] + 'stills/'
     capture = ('raspistill ' +
-               '--roi 0.15,0.2,0.75,0.45' +
+               '--roi 0.15,0.2,0.75,0.45 ' +
                '--height 875 ' +
                '--width 1944 ' +
                '--burst ' + 
