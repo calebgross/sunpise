@@ -139,15 +139,19 @@ def get_event_times():
                                'end'  : 'civil_twilight_end'}}
 
     # for events "start" and "end":
-    #   1) create datetime object from API response string
-    #   2) make the datetime timezone-aware (API returns in UTC)
-    #   3) convert to local timezone
-    #   4) complete the datetime with local year, month, and day
+    #    1) create datetime object from API response string
+    #    2) make the datetime timezone-aware (API returns in UTC)
+    #    3) convert to local timezone
+    #    4) complete the datetime with local year, month, and day
+    #   5a) if sunrise, move the end time forward by one hour
+    #   5b) if sunset, move the start time back by one hour
+    mode        = ('sunrise', 'sunset').index(args['event_type'])
     event_times = {event_name: datetime.strptime(
         response[event_names[args['event_type']][event_name]],
         '%I:%M:%S %p').replace(
         year=today.year, tzinfo=UTC).astimezone(tzlocal()).replace(
-        year=today.year, month=today.month, day=today.day)
+        year=today.year, month=today.month, day=today.day) + timedelta(
+        hours=(1 - 2 * mode) * (('end', 'start').index(event_name) == mode))
         for event_name in sorted(event_names[args['event_type']].keys())}
 
     return event_times
@@ -222,7 +226,7 @@ def stitch():
     make_video = ('avconv ' +
                   '-f image2 ' + 
                   '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
-                  '-r 12 ' + 
+                  '-r 24 ' + 
                   '-qscale 1 ' +
                   args['directory'] + video_name)
     print('\n==> Step 2 of 4 (' +
