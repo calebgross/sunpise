@@ -1,9 +1,9 @@
-SunPise
-===
-####How It Works
+# SunPise
+
+## How It Works
 A Raspberry Pi grabs the sunrise time from the web each morning, and uses its attached camera module to record a time-lapse of the sunrise. It then posts the time-lapse to a [YouTube channel](https://www.youtube.com/channel/UCFsV7YLKRGnAX3VVVQzPAXg) where others can view it.
 
-####Dependencies and Installation
+## Dependencies and Installation
 Ensure the following packages are installed before attempting to run `sunpise.py`:
 
 - [python3](https://www.python.org/download/releases/3.0/)
@@ -31,7 +31,7 @@ You can make use of the following commands to debug your camera's setup and netw
 
 		raspivid -t 999999 -o - | nc [insert the IP address of the client] 5001
 
-####To-do
+## To-do
 - Implement error handling
 - Switch from `os` to `subprocess`
 - Automate OAuth 2.0 initial verification/authentication
