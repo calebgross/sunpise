@@ -1,5 +1,6 @@
-client_secrets.json
-misc/
+*oauth2.json
+client_secret.json
 stills/
 __pycache__/
 ignore/
+video_test.py
