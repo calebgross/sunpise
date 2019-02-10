@@ -22,12 +22,8 @@ from    oauth2client.client        import  flow_from_clientsecrets
 from    oauth2client.file          import  Storage
 from    oauth2client.tools         import  run_flow
 
-# from google_auth_oauthlib.flow import InstalledAppFlow
-# import os
-
 
 CLIENT_SECRETS_FILE    = 'client_secret.json'
-# SCOPES                 = ['https://www.googleapis.com/auth/youtube.upload']
 SCOPE                  = 'https://www.googleapis.com/auth/youtube.upload'
 API_SERVICE_NAME       = 'youtube'
 API_VERSION            = 'v3'

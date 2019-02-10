@@ -1,10 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from argparse     import ArgumentParser
 from datetime     import datetime,timedelta
 from json         import loads
-from os           import getcwd,system,listdir
+from os           import system,listdir
 from re           import sub
 from subprocess   import Popen,PIPE,STDOUT
 from textwrap     import TextWrapper
@@ -17,48 +16,15 @@ from requests     import get
 from upload_video import *
 
 # Initialize variables.
-ip_info          = loads(requests.get('http://ipinfo.io').text)
-city             = ip_info['city']
-coordinates      = ip_info['loc'].split(',')
-
-# Set up argument parser.
-parser = ArgumentParser()
-parser.add_argument('-c','--capture-interval', type=int, default=60,
-    help='duration of recording, in seconds (use with -n)')
-parser.add_argument('-D','--debug', action='store_true', default=False,
-    help='debug mode')
-parser.add_argument('-d','--directory', default=os.getcwd()+'/',
-    help='directory where sunpise files are stored')
-parser.add_argument('-e','--event-type', default='sunrise',
-    help='sunrise or sunset', choices=['sunrise', 'sunset'])
-parser.add_argument('-f','--client-secret', default='client_secret.json',
-    help='client secret file')
-parser.add_argument('-l','--location', default=city,
-    help='camera\'s geographic location')
-parser.add_argument('-n','--start-now', action='store_true', default=False,
-    help='start recording now')
-parser.add_argument('-s','--still-interval', type=int, default=1000,
-    help='individual frame exposure length, in milliseconds')
-parser.add_argument('-u','--upside-down', action='store_true', default=False,
-    help='lens positioned upside-down')
-args = vars(parser.parse_args())
-
-
-def main():
-    print_header()                    # Log heading.
-    event_times = get_event_times()
-    print_times(event_times)          # Get event times.
-    wait_start(event_times['start'])  # Wait until event to start timelapse.
-    capture(event_times)              # Start capturing stills.
-    video_name = stitch()             # Make video.
-    upload(video_name)                # Upload video.
-    cleanup()                         # Remove files from device.
+ip_info     = loads(get('http://ipinfo.io').text)
+city        = ip_info['city']
+coordinates = ip_info['loc'].split(',')
 
 
 # Wrapper to create easily-readable log entries.
-def run_command(command, log=True):
+def run_command(command, args, log=True):
     prefix = 'Executing command: '
-    wrapper =TextWrapper(
+    wrapper = TextWrapper(
         initial_indent=prefix,
         width=80,
         subsequent_indent=' ' * int((len(prefix) / 4))
@@ -66,11 +32,11 @@ def run_command(command, log=True):
     if log:
         print(wrapper.fill(command))
     if not args['debug']:
-        os.system(command)
+        system(command)
 
 
 # Log event type, date, and debug status.
-def print_header():
+def print_header(args):
     
     # Prepare header.
     title_char = '~'
@@ -90,14 +56,14 @@ def print_header():
 
 
 # Pretty print event times.
-def print_times(event_times):
+def print_times(args, event_times):
     for key in reversed(sorted(event_times.keys())):
         print(args['event_type'].capitalize(), key + ':' + ' ' * 
             (9 - len(key)) + event_times[key].strftime('%H:%M'))
 
 
 # Get times for dawn and sunshine from the web.
-def get_event_times():
+def get_event_times(args):
 
     if args['start_now']:
         return {'start': datetime.now().replace(tzinfo=tzlocal()),
@@ -107,7 +73,7 @@ def get_event_times():
     # Query API for sunrise/sunset info, and load into JSON for easy parsing.
     payload  = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
     url      = 'http://api.sunrise-sunset.org/json'
-    response = loads(requests.get(url, params=payload).text)['results']
+    response = loads(get(url, params=payload).text)['results']
     
     # Initialize data structures to iterate through JSON response.
     today       = datetime.now()
@@ -136,7 +102,7 @@ def get_event_times():
 
 
 # Sleep until event start.
-def wait_start(start):
+def wait_start(args, start):
 
     # Print current time.
     print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
@@ -166,50 +132,45 @@ def wait_start(start):
 
 
 # Take pictures for specified interval.
-def capture(event_times):
+def capture(args, event_times):
     if not args['start_now']:
         capture_interval = (event_times['end'] - event_times['start']).seconds
     else:
         capture_interval = args['capture_interval']
     stills_dir = args['directory'] + 'stills/'
     capture = ('raspistill ' +
-               '--roi 0.15,0.2,0.75,0.45 ' +
-               '--height 875 ' +
-               '--width 1944 ' +
-               '--burst ' + 
+               '--rotation ' + str(args['rotation']) + ' ' +
+               '--height 1080 ' +
+               '--width 1920' +
+               # '--burst ' + 
                '--output ' + stills_dir + 'still_%04d.jpg ' +
                '--timelapse ' + str(args['still_interval']) + ' ' +
-               '--timeout ' + str(capture_interval*1000))
-    if args['upside_down']:
-        capture += ' --hflip --vflip'
+               '--timeout ' + str(capture_interval * 1000))
+    # if args['upside_down']:
+    #     capture += ' --hflip --vflip'
     print('\n==> Step 1 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(args['still_interval']/1000))+ ' seconds for ' +
         str(int(capture_interval/60)) + ' minutes.')
-    run_command(capture)  
+    run_command(capture, args)  
     
     # Account for unprocessed stills so avconv can process input.
-    filenames = os.listdir(stills_dir)
+    filenames = listdir(stills_dir)
     for i, filename in enumerate(sorted(filenames)):
         new_filename = 'still_' + str(int(i)).zfill(4) + '.jpg'
         run_command(
             'mv ' + stills_dir + filename + ' ' + stills_dir + new_filename,
+            args,
             False)
 
     return
 
 
 # Compile frames into video.
-def stitch():
+def stitch(args):
     video_name = 'sunpise' + datetime.now().strftime('_%m-%d-%y_%H-%M') + '.avi'
-#     make_video = ('avconv ' +
-#                   '-f image2 ' + 
-#                   '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
-#                   '-r 24 ' + 
-#                   '-qscale 1 ' +
-#                   args['directory'] + video_name)
     make_video = ('ffmpeg ' +
                   '-i ' + args['directory'] + 'stills/still_%04d.jpg ' + 
                   '-r 24 ' + 
@@ -218,23 +179,23 @@ def stitch():
                   args['directory'] + video_name)
     print('\n==> Step 2 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Stitching frames together...')
-    run_command(make_video)
+    run_command(make_video, args)
     return video_name
 
 
 # Upload to YouTube.
-def upload(video_name):
+def upload(args, video_name):
 
     # Prepare arguments to YouTube API.
     location_formatted = sub(r'-.*', '', args['location']).title()
     event_type_formatted = args['event_type'].capitalize()
     options = dict(
-      category      = '22',
+      category      = '1',  # Film & Animation
       description   = '',
       file          = args['directory'] + (video_name if not args['debug'] else 'vid.mp4'), 
       keywords      = '',
       logging_level = 'ERROR',
-      privacyStatus = 'private',
+      privacyStatus = args['private'],
       title         = location_formatted + ' ' + event_type_formatted + ' - ' + 
                       datetime.now().strftime('%d %b %Y')
       )
@@ -256,15 +217,12 @@ def upload(video_name):
 
 
 # Delete stills and generated video file.
-def cleanup():
+def cleanup(args):
     cleanup = ('rm ' + args['directory'] + 'stills/*.jpg; rm ' +
         args['directory'] + '*.avi')
     print('\n==> Step 4 of 4 (' +
         datetime.now().strftime('%H:%M') + '): Removing files...')
-    run_command(cleanup)
-    print('\n==> Finished at',datetime.now().strftime('%H:%M')+'.\n')
+    run_command(cleanup, args)
+    print('\n==> Finished at', datetime.now().strftime('%H:%M')+'.\n')
     return
 
-
-if __name__ == "__main__":
-    main()
