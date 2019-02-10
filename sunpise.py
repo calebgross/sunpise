@@ -1,43 +1,28 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from argparse     import ArgumentParser
+from datetime     import datetime,timedelta
+from json         import loads
+from os           import getcwd,system,listdir
+from re           import sub
+from subprocess   import Popen,PIPE,STDOUT
+from textwrap     import TextWrapper
+from time         import sleep
+
+from dateutil.tz  import tzlocal
+from pytz         import UTC
+from requests     import get
+
 from upload_video import *
 
-# Sunpise core.
-import requests
-import re
-import textwrap
-import os
-import argparse
-import json
-from   subprocess  import Popen, PIPE, STDOUT
-from   datetime    import datetime, timedelta
-from   dateutil.tz import tzlocal
-from   pytz        import UTC
-from   time        import sleep
-
-# Upload video.
-# import http.client
-# import httplib2
-# import random
-# import sys
-# import time
-# from   apiclient.discovery import build
-# from   apiclient.errors    import HttpError
-# from   apiclient.http      import MediaFileUpload
-# from   oauth2client.client import flow_from_clientsecrets
-# from   oauth2client.file   import Storage
-# from   oauth2client.tools  import argparser, run_flow
-
-
 # Initialize variables.
-# httplib2.RETRIES = 1
-ip_info          = json.loads(requests.get('http://ipinfo.io').text)
+ip_info          = loads(requests.get('http://ipinfo.io').text)
 city             = ip_info['city']
 coordinates      = ip_info['loc'].split(',')
 
 # Set up argument parser.
-parser = argparse.ArgumentParser()
+parser = ArgumentParser()
 parser.add_argument('-c','--capture-interval', type=int, default=60,
     help='duration of recording, in seconds (use with -n)')
 parser.add_argument('-D','--debug', action='store_true', default=False,
@@ -73,7 +58,7 @@ def main():
 # Wrapper to create easily-readable log entries.
 def run_command(command, log=True):
     prefix = 'Executing command: '
-    wrapper = textwrap.TextWrapper(
+    wrapper =TextWrapper(
         initial_indent=prefix,
         width=80,
         subsequent_indent=' ' * int((len(prefix) / 4))
@@ -122,7 +107,7 @@ def get_event_times():
     # Query API for sunrise/sunset info, and load into JSON for easy parsing.
     payload  = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
     url      = 'http://api.sunrise-sunset.org/json'
-    response = json.loads(requests.get(url, params=payload).text)['results']
+    response = loads(requests.get(url, params=payload).text)['results']
     
     # Initialize data structures to iterate through JSON response.
     today       = datetime.now()
@@ -241,7 +226,7 @@ def stitch():
 def upload(video_name):
 
     # Prepare arguments to YouTube API.
-    location_formatted = re.sub(r'-.*', '', args['location']).title()
+    location_formatted = sub(r'-.*', '', args['location']).title()
     event_type_formatted = args['event_type'].capitalize()
     options = dict(
       category      = '22',
