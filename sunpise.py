@@ -141,7 +141,7 @@ def capture(args, event_times):
     capture = ('raspistill ' +
                '--rotation ' + str(args['rotation']) + ' ' +
                '--height 1080 ' +
-               '--width 1920' +
+               '--width 1920 ' +
                # '--burst ' + 
                '--output ' + stills_dir + 'still_%04d.jpg ' +
                '--timelapse ' + str(args['still_interval']) + ' ' +
