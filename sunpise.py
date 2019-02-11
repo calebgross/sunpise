@@ -195,7 +195,7 @@ def upload(args, video_name):
       file          = args['directory'] + (video_name if not args['debug'] else 'vid.mp4'), 
       keywords      = '',
       logging_level = 'ERROR',
-      privacyStatus = args['private'],
+      privacyStatus = 'private' if args['private'] else 'public',
       title         = location_formatted + ' ' + event_type_formatted + ' - ' + 
                       datetime.now().strftime('%d %b %Y')
       )

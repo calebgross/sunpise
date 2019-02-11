@@ -26,7 +26,7 @@ parser.add_argument('-r', '--rotation', type=int, default=0,
     help='degrees to rotate')
 # parser.add_argument('-u', '--upside-down', action='store_true', default=False,
 #     help='lens positioned upside-down')
-parser.add_argument('-p', '--private', action='store_true', default='public',
+parser.add_argument('-p', '--private', action='store_true', default=False,
     help='make video private')
 args = vars(parser.parse_args())
 
