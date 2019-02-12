@@ -5,7 +5,6 @@
 # - Modified get_authenticated_service() to store authentication token.
 # - Build arguments directly without using argparser, per say.
 
-import  argparse                           
 import  http.client                        
 import  httplib2                           
 from    random                     import  random
@@ -23,7 +22,8 @@ from    oauth2client.file          import  Storage
 from    oauth2client.tools         import  run_flow
 
 
-CLIENT_SECRETS_FILE    = 'client_secret.json'
+CLIENT_SECRET_FILE     = 'client_secret.json'
+OAUTH_FILE             = 'oauth2.json'
 SCOPE                  = 'https://www.googleapis.com/auth/youtube.upload'
 API_SERVICE_NAME       = 'youtube'
 API_VERSION            = 'v3'
@@ -37,17 +37,15 @@ RETRIABLE_EXCEPTIONS   = (httplib2.HttpLib2Error, IOError, http.client.NotConnec
     http.client.ResponseNotReady, http.client.BadStatusLine)
 
 
-def get_authenticated_service():
-    storage = Storage('%s-oauth2.json' % argv[0])
+def get_authenticated_service(storage=OAUTH_FILE):
     credentials = storage.get()
     if credentials is None or credentials.invalid:
         flow = flow_from_clientsecrets(
-            CLIENT_SECRETS_FILE,
+            CLIENT_SECRET_FILE,
             scope=SCOPE,
             message='WARNING: Please configure OAuth 2.0')
-        # credentials = run_flow(flow, storage, args)
         credentials = run_flow(flow, storage)
-    return build('youtube', 'v3', http=credentials.authorize(httplib2.Http()))
+    return build(API_SERVICE_NAME, API_VERSION, http=credentials.authorize(httplib2.Http()))
 
 
 def initialize_upload(youtube, options):
