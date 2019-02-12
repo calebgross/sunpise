@@ -15,11 +15,6 @@ from requests     import get
 
 from upload_video import *
 
-# Initialize variables.
-ip_info     = loads(get('http://ipinfo.io').text)
-city        = ip_info['city']
-coordinates = ip_info['loc'].split(',')
-
 
 # Wrapper to create easily-readable log entries.
 def run_command(command, args, log=True):
@@ -42,7 +37,7 @@ def print_header(args):
     title_char = '~'
     title = (args['location'].title() + ' ' +
              args['event_type'].capitalize()  + ' ' +
-             '-'*(len(args['event_type'])%2+2) + ' ' + 
+             '-' * (len(args['event_type']) %2 + 2) + ' ' + 
              datetime.now().strftime('%d %b %Y'))
     title_margin = int(40 - float(len(title) + 2) / 2)
     
@@ -71,9 +66,10 @@ def get_event_times(args):
                          timedelta(0, int(args['capture_interval']))}
 
     # Query API for sunrise/sunset info, and load into JSON for easy parsing.
-    payload  = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
-    url      = 'http://api.sunrise-sunset.org/json'
-    response = loads(get(url, params=payload).text)['results']
+    coordinates = loads(get('http://ipinfo.io').text)['loc'].split(',')
+    payload     = {'lat': coordinates[0], 'lng': coordinates[1], 'date': 'today'}
+    url         = 'http://api.sunrise-sunset.org/json'
+    response    = loads(get(url, params=payload).text)['results']
     
     # Initialize data structures to iterate through JSON response.
     today       = datetime.now()
@@ -105,7 +101,7 @@ def get_event_times(args):
 def wait_start(args, start):
 
     # Print current time.
-    print('Currently', datetime.now().time().strftime('%H:%M')+',', end=' ')
+    print('Currently', datetime.now().time().strftime('%H:%M') + ',', end=' ')
 
     # Check if event has started.
     if datetime.now().replace(tzinfo=tzlocal()) >= start:
@@ -119,9 +115,9 @@ def wait_start(args, start):
         time_delta = start - datetime.now().replace(tzinfo=tzlocal())
         seconds_until_start = time_delta.seconds + 5
         if seconds_until_start >= 3600:
-            sleep_time = str(round(seconds_until_start/3600, 2)) + ' hours'
+            sleep_time = str(round(seconds_until_start / 3600, 2)) + ' hours'
         elif seconds_until_start >= 60:
-            sleep_time = str(round(seconds_until_start/60, 2)) + ' minutes'
+            sleep_time = str(round(seconds_until_start / 60, 2)) + ' minutes'
         else:
             sleep_time = str(seconds_until_start) + ' seconds'
 
@@ -152,7 +148,7 @@ def capture(args, event_times):
         datetime.now().strftime('%H:%M') + '): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
-        str(int(args['still_interval']/1000))+ ' seconds for ' +
+        str(int(args['still_interval'] / 1000))+ ' seconds for ' +
         str(int(capture_interval/60)) + ' minutes.')
     run_command(capture, args)  
     
