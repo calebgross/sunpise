@@ -24,8 +24,6 @@ parser.add_argument('-s', '--still-interval', type=int, default=1000,
     help='time between frames, in milliseconds')
 parser.add_argument('-r', '--rotation', type=int, default=0,
     help='degrees to rotate')
-# parser.add_argument('-u', '--upside-down', action='store_true', default=False,
-#     help='lens positioned upside-down')
 parser.add_argument('-p', '--private', action='store_true', default=False,
     help='make video private')
 args = vars(parser.parse_args())
@@ -35,10 +33,15 @@ def main():
     event_times = get_event_times(args)
     print_times(args, event_times)
     wait_start(args, event_times['start'])
+    print('\n==> Step 1 of 4 (' + datetime.now().strftime('%H:%M') + '): Capturing stills...')
     capture(args, event_times)
+    print('\n==> Step 2 of 4 (' + datetime.now().strftime('%H:%M') + '): Stitching frames together...')
     video_name = stitch(args)
+    print('\n==> Step 2 of 4 (' + datetime.now().strftime('%H:%M') + '): Stitching frames together...')
     upload(args, video_name)
+    print('\n==> Step 4 of 4 (' + datetime.now().strftime('%H:%M') + '): Removing files...')
     cleanup(args)
+    print('\n==> Finished at', datetime.now().strftime('%H:%M')+'.\n')
 
 if __name__ == '__main__':
     main()

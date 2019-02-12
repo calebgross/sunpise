@@ -19,11 +19,9 @@ from upload_video import *
 # Wrapper to create easily-readable log entries.
 def run_command(command, args, log=True):
     prefix = 'Executing command: '
-    wrapper = TextWrapper(
-        initial_indent=prefix,
-        width=80,
-        subsequent_indent=' ' * int((len(prefix) / 4))
-        )
+    wrapper = TextWrapper(initial_indent=prefix,
+                          width=80,
+                          subsequent_indent=' ' * int((len(prefix) / 4)))
     if log:
         print(wrapper.fill(command))
     if not args['debug']:
@@ -142,10 +140,6 @@ def capture(args, event_times):
                '--output ' + stills_dir + 'still_%04d.jpg ' +
                '--timelapse ' + str(args['still_interval']) + ' ' +
                '--timeout ' + str(capture_interval * 1000))
-    # if args['upside_down']:
-    #     capture += ' --hflip --vflip'
-    print('\n==> Step 1 of 4 (' +
-        datetime.now().strftime('%H:%M') + '): Capturing stills...')
     print('Starting at ' + event_times['start'].strftime('%H:%M') + 
         ', capturing stills every ' +
         str(int(args['still_interval'] / 1000))+ ' seconds for ' +
@@ -173,8 +167,6 @@ def stitch(args):
                   '-s hd1080 ' + 
                   '-vcodec libx264 ' + 
                   args['directory'] + video_name)
-    print('\n==> Step 2 of 4 (' +
-        datetime.now().strftime('%H:%M') + '): Stitching frames together...')
     run_command(make_video, args)
     return video_name
 
@@ -196,9 +188,6 @@ def upload(args, video_name):
                       datetime.now().strftime('%d %b %Y')
       )
 
-    print('\n==> Step 3 of 4 (' +
-        datetime.now().strftime('%H:%M') + '): Uploading video...')
-
     # authenticate to YouTube
     youtube = get_authenticated_service()
 
@@ -216,9 +205,6 @@ def upload(args, video_name):
 def cleanup(args):
     cleanup = ('rm ' + args['directory'] + 'stills/*.jpg; rm ' +
         args['directory'] + '*.avi')
-    print('\n==> Step 4 of 4 (' +
-        datetime.now().strftime('%H:%M') + '): Removing files...')
     run_command(cleanup, args)
-    print('\n==> Finished at', datetime.now().strftime('%H:%M')+'.\n')
     return
 
